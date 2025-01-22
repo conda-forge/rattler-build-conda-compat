@@ -50,3 +50,14 @@ def test_conditional_source_render(snapshot) -> None:
     sources = render_all_sources(recipe_yaml, variants)
     assert len(sources) == 4
     assert sources == snapshot
+
+
+def test_variant_variables_source_render(snapshot) -> None:
+    polars = test_data / "polars" / "sources.yaml"
+    variants = (test_data / "polars" / "ci_support").glob("*.yaml")
+
+    recipe_yaml = load_yaml(polars.read_text())
+    variants = [load_yaml(variant.read_text()) for variant in variants]
+
+    sources = render_all_sources(recipe_yaml, variants)
+    assert sources == snapshot
