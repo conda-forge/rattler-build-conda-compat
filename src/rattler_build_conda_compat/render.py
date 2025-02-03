@@ -311,9 +311,9 @@ def render(
                             # convert both values to str(), since conda-smithy passes strings
                             # in variants, but package_variants contain actual types
                             str(pkg_variant[used_variant_key]) != str(used_variant_value)
-                            and pkg_variant in package_variants
                         ):
                             package_variants.remove(pkg_variant)
+                            break
 
             m.config.variant = package_variants[0]
 
