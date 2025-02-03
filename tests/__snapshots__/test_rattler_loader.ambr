@@ -49,6 +49,10 @@
 # ---
 # name: test_load_variants
   dict({
+    'c_compiler_version': list([
+      13,
+      14,
+    ]),
     'liboost': list([
       '0.10.01.001',
       '0.10',

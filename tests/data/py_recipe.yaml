@@ -3,6 +3,7 @@ package:
     version: 1.0.0
 requirements:
     build:
+      - "${{ compiler('c') }}"
       - if: win
         then:
           - ruby

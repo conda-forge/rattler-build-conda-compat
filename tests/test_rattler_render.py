@@ -18,7 +18,7 @@ def test_render_recipe(python_recipe: Path, unix_namespace: dict[str, Any], snap
 
     all_used_variants = [meta[0].get_used_variant() for meta in rendered]
 
-    assert len(all_used_variants) == 2
+    assert len(all_used_variants) == 4
 
     assert snapshot == all_used_variants
 
