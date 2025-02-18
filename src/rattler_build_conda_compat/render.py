@@ -69,7 +69,7 @@ class MetaData(CondaMetaData):
     def parse_recipe(self) -> dict[str, Any]:
         recipe_path: Path = Path(self.path) / self._meta_name
 
-        yaml_content = load_yaml(recipe_path.read_text())
+        yaml_content = load_yaml(recipe_path.read_text(encoding="utf-8"))
 
         return render_recipe_with_context(yaml_content)
 
@@ -123,8 +123,8 @@ class MetaData(CondaMetaData):
 
         yaml = _yaml_object()
         try:
-            with tempfile.NamedTemporaryFile(mode="w+") as outfile:
-                with tempfile.NamedTemporaryFile(mode="w") as variants_file:
+            with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8") as outfile:
+                with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8") as variants_file:
                     # dump variants in our variants that will be used to generate recipe
                     if variants:
                         yaml.dump(variants, variants_file)

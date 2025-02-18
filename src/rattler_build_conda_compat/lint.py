@@ -306,7 +306,7 @@ def lint_variable_reference_should_have_space(recipe_dir, recipe_file):
     if recipe_dir is not None and os.path.exists(recipe_file):
         bad_vars = []
         bad_lines = []
-        with open(recipe_file, "r") as fh:
+        with open(recipe_file, "r", encoding="utf-8") as fh:
             for i, line in enumerate(fh.readlines()):
                 for m in JINJA_VAR_PAT.finditer(line):
                     if m.group(1) is not None:
