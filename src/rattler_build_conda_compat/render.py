@@ -162,8 +162,11 @@ class MetaData(CondaMetaData):
             # return empty
             return set()
 
+        # don't include subpackages in used_vars
         used_vars = [
-            var.replace("-", "_") for var in self.meta["build_configuration"]["variant"].keys()
+            var.replace("-", "_")
+            for var in self.meta["build_configuration"]["variant"].keys()
+            if var not in self.meta["build_configuration"]["subpackages"]
         ]
 
         # in conda-build target-platform is not returned as part of yaml vars
@@ -187,6 +190,10 @@ class MetaData(CondaMetaData):
         used_variant_key_normalized = {}
 
         for key, value in used_variant.items():
+            if key in self.meta["build_configuration"]["subpackages"]:
+                # don't include subpackage names in used_variant
+                continue
+
             normalized_key = key.replace("-", "_")
             used_variant_key_normalized[normalized_key] = value
 

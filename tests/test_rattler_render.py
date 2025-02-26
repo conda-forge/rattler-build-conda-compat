@@ -89,3 +89,23 @@ def test_metadata_when_rendering_multiple_output(
 
     assert rendered[0][0].name() == "libmamba"
     assert rendered[0][0].version() == "1.5.8"
+
+
+def test_used_variant(feedstock_dir_with_recipe: Path, multiple_outputs: Path) -> None:
+    recipe_path = feedstock_dir_with_recipe / "recipe" / "recipe.yaml"
+    (recipe_path).write_text(multiple_outputs.read_text(), encoding="utf8")
+
+    # e.g. conda-forge, variant file may include variants
+    # on outputs from the given package
+    variants = {
+        "libmamba": ["1", "2"],
+        "python": ["3.12", "3.13"],
+    }
+    rendered = render(str(recipe_path), variants=variants, platform="linux", arch="64")
+    # 3 outputs, 2 of which use python
+    assert len(rendered) == 5
+    meta = rendered[-1][0]
+    assert "libmamba" not in meta.get_used_vars()
+    assert "libmamba" not in meta.get_used_variant()
+    assert "python" in meta.get_used_variant()
+    assert "python" in meta.get_used_variant()
