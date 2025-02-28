@@ -7,6 +7,7 @@ context:
   mamba_version: "1.5.8"
   release: "2024.03.25"
   build_number: 2
+  libmamba_minor_version: ${{ (libmamba_version | split('.'))[:-1] | join('.') }}
 
 recipe:
   name: mamba-split
