@@ -122,6 +122,11 @@ def load_all_requirements(content: dict[str, Any]) -> dict[str, Any]:
 
     for section in requirements_section:
         section_reqs = requirements_section[section]
+
+        if section == "run_exports" and isinstance(section_reqs, dict):
+            # flatten 'weak:', 'strong:' to a single list of requirements
+            section_reqs = list(itertools.chain(*section_reqs.values()))
+
         if not section_reqs:
             continue
 

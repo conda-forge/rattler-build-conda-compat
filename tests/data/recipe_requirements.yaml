@@ -6,3 +6,13 @@ requirements:
         - ${{ cdt('xorg-x11-proto-devel') }}
   host:
     - python
+  run_exports:
+    weak:
+      - if: osx
+        then:
+          - weak-then
+        else:
+          - weak-else
+      - weakreq
+    strong:
+      - strongreq

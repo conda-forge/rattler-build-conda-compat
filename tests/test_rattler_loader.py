@@ -26,6 +26,12 @@ def test_load_all_requirements() -> None:
 
     content = load_all_requirements(recipe_content)
     print(content)
+    assert sorted(content["run_exports"]) == [
+        "strongreq",
+        "weak-else",
+        "weak-then",
+        "weakreq",
+    ]
 
 
 def test_load_recipe_with_missing_selectors(snapshot) -> None:
