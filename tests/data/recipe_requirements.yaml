@@ -16,3 +16,6 @@ requirements:
       - weakreq
     strong:
       - strongreq
+  ignore_run_exports:
+    from_package:
+      - python
