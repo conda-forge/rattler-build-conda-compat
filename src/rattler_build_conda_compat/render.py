@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 import json
+from itertools import chain
 import os
 from pathlib import Path
 import subprocess
@@ -353,11 +354,54 @@ def get_package_combined_spec(recipedir_or_metadata, config, variants=None):
     return combined_spec, specs
 
 
+def _reduce_variants(m: MetaData, variants: list[dict] | None) -> tuple[dict, dict]:
+    """Reduce variants dict to the used subset
+
+    Avoids combinatorial explosion in rattler_get_package_variants
+    for unused variants
+    """
+    if not variants:
+        return {}, {}
+    all_variants = variants
+    # track the used variables
+    all_used_vars = set()
+    all_used_vars.update(m.get_used_vars())
+    # keep zip_keys and everything zipped
+    # since the zipping happens, even on unused keys
+    all_used_vars.add("zip_keys")
+    all_zip_keys = set(chain(*variants.get("zip_keys", [])))
+    all_used_vars.update(all_zip_keys)
+
+    # compute reduced variant dict,
+    # only containing used keys
+    reduced_variants = {key: all_variants[key] for key in all_variants if key in all_used_vars}
+    if not reduced_variants:
+        # nothing used, return original
+        return variants, {}
+
+    # keep track of unused variants to put back
+    # after exploding the list
+    unused_variants = {}
+    for key in all_variants:
+        if key not in reduced_variants:
+            unused_variants[key] = all_variants[key]
+    return reduced_variants, unused_variants
+
+
 def rattler_get_package_variants(recipedir_or_metadata, config=None, variants=None):
     # this function is *vendored* version of
     # get_package_variants from conda_build
     # with few changes to support rattler-build
+
+    # reduce variants to used fields before exploding the matrix
+    # avoids computing potentially thousands of unused variants
+    # in e.g. conda-smithy rerender
+    reduced_variants, unused_variants = _reduce_variants(recipedir_or_metadata, variants)
     combined_spec, specs = get_package_combined_spec(
-        recipedir_or_metadata, config=config, variants=variants
+        recipedir_or_metadata, config=config, variants=reduced_variants
     )
-    return filter_combined_spec_to_used_keys(combined_spec, specs=specs)
+    package_variants = filter_combined_spec_to_used_keys(combined_spec, specs=specs)
+    # restore unused fields after exploding the list
+    for pkg_variant in package_variants:
+        pkg_variant.update(unused_variants)
+    return package_variants
