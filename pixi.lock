@@ -11120,8 +11120,8 @@ packages:
   timestamp: 1735902555109
 - pypi: .
   name: rattler-build-conda-compat
-  version: 1.3.4
-  sha256: fe91d73ac6faad363f14d601b90faec24e78f1054035fc00e6671f7211f4f9b3
+  version: 1.4.0
+  sha256: eb9457d5b34c33f3a2daae785cc8a37b77b0a7d4bfdc8a8e418e76aff7d34c39
   requires_dist:
   - typing-extensions>=4.12,<5
   - jinja2>=3.0.2,<4
