@@ -393,7 +393,13 @@ def _reduce_variants(m: MetaData, variants: list[dict] | None) -> tuple[dict, di
     unused_variants = {}
     for key in all_variants:
         if key not in reduced_variants:
-            unused_variants[key] = all_variants[key]
+            # unused, but get first scalar to make sure it's the right shape
+            # in case it's used outside (e.g. in conda-smithy)
+            unused_value = all_variants[key]
+            if isinstance(unused_value, list) and unused_value:
+                unused_value = unused_value[0]
+
+            unused_variants[key] = unused_value
     return reduced_variants, unused_variants
 
 

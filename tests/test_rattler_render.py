@@ -99,6 +99,7 @@ def test_used_variant(feedstock_dir_with_recipe: Path, multiple_outputs: Path) -
     # on outputs from the given package
     variants = {
         "libmamba": ["1", "2"],
+        "unused": "scalar",
         "python": ["3.12", "3.13"],
     }
     rendered = render(str(recipe_path), variants=variants, platform="linux", arch="64")
@@ -109,3 +110,11 @@ def test_used_variant(feedstock_dir_with_recipe: Path, multiple_outputs: Path) -
     assert "libmamba" not in meta.get_used_variant()
     assert "python" in meta.get_used_variant()
     assert "python" in meta.get_used_variant()
+
+    # make sure unused variants are still in the variant dicts,
+    # but reduced to first scalar
+    assert "libmamba" in meta.config.variant
+    for variant in meta.config.variants:
+        assert variant["libmamba"] == "1"
+
+    assert "unused" in meta.config.variant
