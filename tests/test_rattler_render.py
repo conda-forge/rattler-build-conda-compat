@@ -54,6 +54,7 @@ def test_metadata_for_single_output(feedstock_dir_with_recipe: Path, rich_recipe
 
     assert rattler_metadata.name() == "rich"
     assert rattler_metadata.version() == "13.4.2"
+    assert rattler_metadata.dist() == "rich-13.4.2-unrendered_0"
 
 
 def test_metadata_for_multiple_output(feedstock_dir_with_recipe: Path, mamba_recipe: Path) -> None:
@@ -74,9 +75,15 @@ def test_metadata_when_rendering_single_output(
     (recipe_path).write_text(rich_recipe.read_text(), encoding="utf8")
 
     rendered = render(str(recipe_path), platform="linux", arch="64")
-
-    assert rendered[0][0].name() == "rich"
-    assert rendered[0][0].version() == "13.4.2"
+    meta = rendered[0][0]
+    assert meta.name() == "rich"
+    assert meta.version() == "13.4.2"
+    dist = meta.dist()
+    dist_name, dist_version, build_id = dist.split("-")
+    assert dist_name == meta.name()
+    assert dist_version == meta.version()
+    assert build_id.startswith("pyh")
+    assert build_id.endswith("_0")
 
 
 def test_metadata_when_rendering_multiple_output(

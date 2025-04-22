@@ -97,6 +97,19 @@ class MetaData(CondaMetaData):
         check_bad_chrs(name, "package/name")
         return name
 
+    def build_id(self) -> str:
+        """
+        Overrides the conda_build.metadata.MetaData.build_ method.
+
+        This is used to compute metadata.dist()
+
+        When rendered, gets the computed value from recipe/build/string.
+        When unrendered, gets build/string if defined, else the placeholder 'unrendered_0'
+        """
+        if self._rendered:
+            return self.meta["recipe"]["build"]["string"]
+        return self.meta.get("build", {}).get("string", "unrendered_0")
+
     def version(self) -> str:
         """
         Overrides the conda_build.metadata.MetaData.version method.
