@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "rattler-build-conda-compat"
 description = "A package for exposing rattler-build API for conda-smithy"
-version = "1.4.2"
+version = "1.4.3"
 readme = "README.md"
 authors = [{ name = "Nichita Morcotilo", email = "nichita@prefix.dev" }]
 license = { file = "LICENSE.txt" }
