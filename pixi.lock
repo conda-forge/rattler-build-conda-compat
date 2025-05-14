@@ -11121,7 +11121,7 @@ packages:
 - pypi: .
   name: rattler-build-conda-compat
   version: 1.3.3
-  sha256: 153608e485afee8437bcc36e1527528c0fe10270058788b77ebca336538db3b3
+  sha256: 1a0d071e56e56b349e006af33f5f3bd7fe06a0067ed7079ca353983bdb11a03a
   requires_dist:
   - typing-extensions>=4.12,<5
   - jinja2>=3.0.2,<4
