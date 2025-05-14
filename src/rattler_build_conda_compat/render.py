@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 import json
+from itertools import chain
 import os
 from pathlib import Path
 import subprocess
@@ -69,7 +70,7 @@ class MetaData(CondaMetaData):
     def parse_recipe(self) -> dict[str, Any]:
         recipe_path: Path = Path(self.path) / self._meta_name
 
-        yaml_content = load_yaml(recipe_path.read_text())
+        yaml_content = load_yaml(recipe_path.read_text(encoding="utf-8"))
 
         return render_recipe_with_context(yaml_content)
 
@@ -95,6 +96,19 @@ class MetaData(CondaMetaData):
 
         check_bad_chrs(name, "package/name")
         return name
+
+    def build_id(self) -> str:
+        """
+        Overrides the conda_build.metadata.MetaData.build_ method.
+
+        This is used to compute metadata.dist()
+
+        When rendered, gets the computed value from recipe/build/string.
+        When unrendered, gets build/string if defined, else the placeholder 'unrendered_0'
+        """
+        if self._rendered:
+            return self.meta["recipe"]["build"]["string"]
+        return self.meta.get("build", {}).get("string", "unrendered_0")
 
     def version(self) -> str:
         """
@@ -123,8 +137,8 @@ class MetaData(CondaMetaData):
 
         yaml = _yaml_object()
         try:
-            with tempfile.NamedTemporaryFile(mode="w+") as outfile:
-                with tempfile.NamedTemporaryFile(mode="w") as variants_file:
+            with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8") as outfile:
+                with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8") as variants_file:
                     # dump variants in our variants that will be used to generate recipe
                     if variants:
                         yaml.dump(variants, variants_file)
@@ -162,8 +176,11 @@ class MetaData(CondaMetaData):
             # return empty
             return set()
 
+        # don't include subpackages in used_vars
         used_vars = [
-            var.replace("-", "_") for var in self.meta["build_configuration"]["variant"].keys()
+            var.replace("-", "_")
+            for var in self.meta["build_configuration"]["variant"].keys()
+            if var not in self.meta["build_configuration"]["subpackages"]
         ]
 
         # in conda-build target-platform is not returned as part of yaml vars
@@ -187,6 +204,10 @@ class MetaData(CondaMetaData):
         used_variant_key_normalized = {}
 
         for key, value in used_variant.items():
+            if key in self.meta["build_configuration"]["subpackages"]:
+                # don't include subpackage names in used_variant
+                continue
+
             normalized_key = key.replace("-", "_")
             used_variant_key_normalized[normalized_key] = value
 
@@ -308,10 +329,12 @@ def render(
                 ) in used_variant.items():
                     if used_variant_key in pkg_variant:
                         if (
-                            pkg_variant[used_variant_key] != used_variant_value
-                            and pkg_variant in package_variants
+                            # convert both values to str(), since conda-smithy passes strings
+                            # in variants, but package_variants contain actual types
+                            str(pkg_variant[used_variant_key]) != str(used_variant_value)
                         ):
                             package_variants.remove(pkg_variant)
+                            break
 
             m.config.variant = package_variants[0]
 
@@ -353,11 +376,60 @@ def get_package_combined_spec(recipedir_or_metadata, config, variants=None):
     return combined_spec, specs
 
 
+def _reduce_variants(m: MetaData, variants: list[dict] | None) -> tuple[dict, dict]:
+    """Reduce variants dict to the used subset
+
+    Avoids combinatorial explosion in rattler_get_package_variants
+    for unused variants
+    """
+    if not variants:
+        return {}, {}
+    all_variants = variants
+    # track the used variables
+    all_used_vars = set()
+    all_used_vars.update(m.get_used_vars())
+    # keep zip_keys and everything zipped
+    # since the zipping happens, even on unused keys
+    all_used_vars.add("zip_keys")
+    all_zip_keys = set(chain(*variants.get("zip_keys", [])))
+    all_used_vars.update(all_zip_keys)
+
+    # compute reduced variant dict,
+    # only containing used keys
+    reduced_variants = {key: all_variants[key] for key in all_variants if key in all_used_vars}
+    if not reduced_variants:
+        # nothing used, return original
+        return variants, {}
+
+    # keep track of unused variants to put back
+    # after exploding the list
+    unused_variants = {}
+    for key in all_variants:
+        if key not in reduced_variants:
+            # unused, but get first scalar to make sure it's the right shape
+            # in case it's used outside (e.g. in conda-smithy)
+            unused_value = all_variants[key]
+            if isinstance(unused_value, list) and unused_value:
+                unused_value = unused_value[0]
+
+            unused_variants[key] = unused_value
+    return reduced_variants, unused_variants
+
+
 def rattler_get_package_variants(recipedir_or_metadata, config=None, variants=None):
     # this function is *vendored* version of
     # get_package_variants from conda_build
     # with few changes to support rattler-build
+
+    # reduce variants to used fields before exploding the matrix
+    # avoids computing potentially thousands of unused variants
+    # in e.g. conda-smithy rerender
+    reduced_variants, unused_variants = _reduce_variants(recipedir_or_metadata, variants)
     combined_spec, specs = get_package_combined_spec(
-        recipedir_or_metadata, config=config, variants=variants
+        recipedir_or_metadata, config=config, variants=reduced_variants
     )
-    return filter_combined_spec_to_used_keys(combined_spec, specs=specs)
+    package_variants = filter_combined_spec_to_used_keys(combined_spec, specs=specs)
+    # restore unused fields after exploding the list
+    for pkg_variant in package_variants:
+        pkg_variant.update(unused_variants)
+    return package_variants

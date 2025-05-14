@@ -39,10 +39,22 @@
 # name: test_render_recipe
   list([
     dict({
+      'c_compiler_version': 13,
       'python': '3.8.* *_cpython',
       'target_platform': 'linux-64',
     }),
     dict({
+      'c_compiler_version': 13,
+      'python': '3.9.* *_cpython',
+      'target_platform': 'linux-64',
+    }),
+    dict({
+      'c_compiler_version': 14,
+      'python': '3.8.* *_cpython',
+      'target_platform': 'linux-64',
+    }),
+    dict({
+      'c_compiler_version': 14,
       'python': '3.9.* *_cpython',
       'target_platform': 'linux-64',
     }),

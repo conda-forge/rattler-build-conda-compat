@@ -20,3 +20,7 @@ liboost:
 ruby:
   - if : unix
     then: 2.5
+
+c_compiler_version:
+  - 13
+  - 14

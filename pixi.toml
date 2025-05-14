@@ -1,6 +1,6 @@
 [project]
 name = "rattler-build-conda-compat"
-version = "1.2.2"
+version = "1.4.3"
 description = "A package for exposing rattler-build API for conda-smithy"
 authors = ["nichmor <nmorkotilo@gmail.com>"]
 channels = ["conda-forge"]
@@ -37,7 +37,7 @@ mypy = ">=1.10.1,<2"
 ruff = ">=0.5.0,<0.6"
 
 [feature.lint.tasks]
-pre-commit-install = "pre-commit-install"
+pre-commit-install = "pre-commit install"
 pre-commit-run = "pre-commit run"
 
 [feature.type-checking.dependencies]

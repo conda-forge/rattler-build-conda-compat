@@ -18,7 +18,7 @@ def test_render_recipe(python_recipe: Path, unix_namespace: dict[str, Any], snap
 
     all_used_variants = [meta[0].get_used_variant() for meta in rendered]
 
-    assert len(all_used_variants) == 2
+    assert len(all_used_variants) == 4
 
     assert snapshot == all_used_variants
 
@@ -54,6 +54,7 @@ def test_metadata_for_single_output(feedstock_dir_with_recipe: Path, rich_recipe
 
     assert rattler_metadata.name() == "rich"
     assert rattler_metadata.version() == "13.4.2"
+    assert rattler_metadata.dist() == "rich-13.4.2-unrendered_0"
 
 
 def test_metadata_for_multiple_output(feedstock_dir_with_recipe: Path, mamba_recipe: Path) -> None:
@@ -74,9 +75,15 @@ def test_metadata_when_rendering_single_output(
     (recipe_path).write_text(rich_recipe.read_text(), encoding="utf8")
 
     rendered = render(str(recipe_path), platform="linux", arch="64")
-
-    assert rendered[0][0].name() == "rich"
-    assert rendered[0][0].version() == "13.4.2"
+    meta = rendered[0][0]
+    assert meta.name() == "rich"
+    assert meta.version() == "13.4.2"
+    dist = meta.dist()
+    dist_name, dist_version, build_id = dist.split("-")
+    assert dist_name == meta.name()
+    assert dist_version == meta.version()
+    assert build_id.startswith("pyh")
+    assert build_id.endswith("_0")
 
 
 def test_metadata_when_rendering_multiple_output(
@@ -89,3 +96,32 @@ def test_metadata_when_rendering_multiple_output(
 
     assert rendered[0][0].name() == "libmamba"
     assert rendered[0][0].version() == "1.5.8"
+
+
+def test_used_variant(feedstock_dir_with_recipe: Path, multiple_outputs: Path) -> None:
+    recipe_path = feedstock_dir_with_recipe / "recipe" / "recipe.yaml"
+    (recipe_path).write_text(multiple_outputs.read_text(), encoding="utf8")
+
+    # e.g. conda-forge, variant file may include variants
+    # on outputs from the given package
+    variants = {
+        "libmamba": ["1", "2"],
+        "unused": "scalar",
+        "python": ["3.12", "3.13"],
+    }
+    rendered = render(str(recipe_path), variants=variants, platform="linux", arch="64")
+    # 3 outputs, 2 of which use python
+    assert len(rendered) == 5
+    meta = rendered[-1][0]
+    assert "libmamba" not in meta.get_used_vars()
+    assert "libmamba" not in meta.get_used_variant()
+    assert "python" in meta.get_used_variant()
+    assert "python" in meta.get_used_variant()
+
+    # make sure unused variants are still in the variant dicts,
+    # but reduced to first scalar
+    assert "libmamba" in meta.config.variant
+    for variant in meta.config.variants:
+        assert variant["libmamba"] == "1"
+
+    assert "unused" in meta.config.variant

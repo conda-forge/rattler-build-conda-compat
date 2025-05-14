@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import itertools
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from rattler_build_conda_compat.conditional_list import visit_conditional_list
 from rattler_build_conda_compat.yaml import _yaml_object
@@ -120,12 +120,29 @@ def load_all_requirements(content: dict[str, Any]) -> dict[str, Any]:
     if not requirements_section:
         return {}
 
-    for section in requirements_section:
-        section_reqs = requirements_section[section]
-        if not section_reqs:
+    for section, section_reqs in requirements_section.items():
+        if section == "run_exports" and isinstance(section_reqs, list):
+            # consistent return type for implicit-weak list format
+            # and equivalent 'weak' dict
+            section_reqs = {  # noqa: PLW2901
+                "weak": section_reqs
+            }
+        filtered_reqs: list | dict[str, list]
+        if isinstance(section_reqs, dict):
+            filtered_reqs = {}
+            # run_exports, ignore_run_exports are dicts of lists
+            for key, sub_reqs in section_reqs.items():
+                key = cast(str, key)
+                filtered_sub_reqs = list(visit_conditional_list(sub_reqs))
+                if filtered_sub_reqs:
+                    filtered_reqs[key] = filtered_sub_reqs
+        else:
+            filtered_reqs = list(visit_conditional_list(section_reqs))
+
+        if not filtered_reqs:
             continue
 
-        requirements_section[section] = list(visit_conditional_list(section_reqs))
+        requirements_section[section] = filtered_reqs
 
     return requirements_section
 
