@@ -138,7 +138,7 @@ def render_all_sources(  # noqa: C901
 
             context = recipe.get("context", {})
             # render out the context section and retrieve dictionary
-            context_variables = combination | load_recipe_context(context, env)
+            context_variables = load_recipe_context(context, env)
 
             # now evaluate the if / else statements
             sources = recipe.get("source")
