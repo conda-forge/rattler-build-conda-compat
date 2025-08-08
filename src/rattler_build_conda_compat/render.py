@@ -121,7 +121,7 @@ class MetaData(CondaMetaData):
             - CondaBuildUserError: If the `version` contains bad characters.
             - ValueError: If the version starts with a period or version is missing.
         """
-        version = _get_recipe_metadata(self.meta, "version", rendered=self._rendered)
+        version = str(_get_recipe_metadata(self.meta, "version", rendered=self._rendered))
 
         if not version:
             raise ValueError(f"Error: package/version missing in: {self.meta_path!r}")
