@@ -44,7 +44,7 @@ exclude = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*.py" = ["S101", "INP001", "PLR2004", "ANN001"]
+"tests/*.py" = ["S101", "SLF001", "INP001", "PLR2004", "ANN001"]
 
 [tool.pyright]
 venvPath = ".pixi/envs"
