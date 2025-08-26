@@ -5,13 +5,9 @@ build:
     python:
         version_independent: true
 requirements:
-    build:
-      - if: win
-        then:
-          - ${{ compiler('c') }}
     host:
         - python
-        - if: is_abi3 and not is_python_min
+        - if: is_abi3
           then:
             - python-abi3
     run:

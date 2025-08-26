@@ -142,7 +142,7 @@ def test_bool_roundtrip(feedstock_dir_with_recipe: Path, py_abi3_recipe: Path) -
         ],
     }
     rendered = render(str(recipe_path), variants=variants, platform="linux", arch="64")
-    # 3 outputs, 2 of which use python
+    # 2 outputs, one is_abi3=true, one is_abi3=false
     assert len(rendered) == 2
     meta_abi3, meta_noabi3 = rendered[0][0], rendered[1][0]
     # make sure result is still conda-build-style string
