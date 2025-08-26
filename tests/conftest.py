@@ -73,6 +73,11 @@ def mamba_recipe() -> Path:
 
 
 @pytest.fixture()
+def py_abi3_recipe() -> Path:
+    return Path("tests/data/py_abi3.yaml")
+
+
+@pytest.fixture()
 def rich_recipe() -> Path:
     return Path("tests/data/rich_recipe.yaml")
 

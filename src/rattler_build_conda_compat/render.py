@@ -209,6 +209,13 @@ class MetaData(CondaMetaData):
                 continue
 
             normalized_key = key.replace("-", "_")
+            # conda-build variants are always strings
+            # coerce bool back to str
+            if value is True:
+                value = "true"
+            elif value is False:
+                value = "false"
+
             used_variant_key_normalized[normalized_key] = value
 
         # in conda-build target-platform is not returned as part of yaml vars

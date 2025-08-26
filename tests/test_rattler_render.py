@@ -125,3 +125,32 @@ def test_used_variant(feedstock_dir_with_recipe: Path, multiple_outputs: Path) -
         assert variant["libmamba"] == "1"
 
     assert "unused" in meta.config.variant
+
+
+def test_bool_roundtrip(feedstock_dir_with_recipe: Path, py_abi3_recipe: Path) -> None:
+    recipe_path = feedstock_dir_with_recipe / "recipe" / "recipe.yaml"
+    (recipe_path).write_text(py_abi3_recipe.read_text(), encoding="utf8")
+
+    # conda-build variants are all always strings
+    # booleans 'true' and 'false' should be treated as bools
+    # during render, but still return conda-build-style string values in used variant dict
+    variants = {
+        "is_abi3": ["true", "false"],
+        "python": ["3.12", "3.13"],
+        "zip_keys": [
+            ["python", "is_abi3"],
+        ],
+    }
+    rendered = render(str(recipe_path), variants=variants, platform="linux", arch="64")
+    # 3 outputs, 2 of which use python
+    assert len(rendered) == 2
+    meta_abi3, meta_noabi3 = rendered[0][0], rendered[1][0]
+    # make sure result is still conda-build-style string
+    assert meta_abi3.get_used_variant()["is_abi3"] == "true"
+    assert meta_noabi3.get_used_variant()["is_abi3"] == "false"
+
+    # make sure it was treated as a bool during render
+    assert meta_abi3.meta["build_configuration"]["variant"]["is_abi3"] is True
+    assert meta_noabi3.meta["build_configuration"]["variant"]["is_abi3"] is False
+    assert "python-abi3" in meta_abi3.meta["recipe"]["requirements"]["host"]
+    assert "python-abi3" not in meta_noabi3.meta["recipe"]["requirements"]["host"]
