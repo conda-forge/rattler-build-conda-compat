@@ -12,6 +12,9 @@ def float_as_string_constructor(loader, node) -> str:  # noqa: ANN001
     return loader.construct_scalar(node)
 
 
+# _yaml_represent_str adapted from conda-smithy @ a52dcf7ab09ef9007702c5a89dc18f0735295036
+# Copyright 2025 conda-forge contributors
+# License: BSD-3-Clause  # noqa: ERA001
 def _yaml_represent_str(yaml_representer: SafeRepresenter, data: str) -> ScalarNode:
     # boolean types in cbc and other sources get converted to strings by conda-build
     # let's go back to booleans
