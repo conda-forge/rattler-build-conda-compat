@@ -27,11 +27,17 @@ def _yaml_object() -> YAML:
     yaml = YAML(typ="rt")
 
     class _CustomConstructor(yaml.Constructor)
-        pass
+        yaml_constructors = {}
+        yaml_multi_constructors = {}
+
+    class _CustomRepresenter(yaml.Representer)
+        yaml_representers = {}
+        yaml_multi_representers = {}
 
     yaml.Constructor = _CustomConstructor
     yaml.Constructor.add_constructor("tag:yaml.org,2002:float", float_as_string_constructor)
-    yaml.representer.add_representer(str, _yaml_represent_str)
+    yaml.Representer = _CustomRepresenter
+    yaml.Representer.add_representer(str, _yaml_represent_str)
     yaml.allow_duplicate_keys = False
     yaml.preserve_quotes = True
     yaml.width = 320
