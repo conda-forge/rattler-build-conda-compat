@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import io
-from typing import Any
+from typing import Any, ClassVar
 
 from ruamel.yaml import YAML
 from ruamel.yaml.representer import SafeRepresenter, ScalarNode
@@ -27,12 +27,18 @@ def _yaml_object() -> YAML:
     yaml = YAML(typ="rt")
 
     class _CustomConstructor(yaml.Constructor):
-        yaml_constructors = {}
-        yaml_multi_constructors = {}
+        yaml_constructors: ClassVar = {}
+        yaml_multi_constructors: ClassVar = {}
 
     class _CustomRepresenter(yaml.Representer):
-        yaml_representers = {}
-        yaml_multi_representers = {}
+        yaml_representers: ClassVar = {}
+        yaml_multi_representers: ClassVar = {}
+
+    _CustomConstructor.yaml_constructors.update(yaml.Constructor.yaml_constructors)
+    _CustomConstructor.yaml_multi_constructors.update(yaml.Constructor.yaml_multi_constructors)
+
+    _CustomRepresenter.yaml_representers.update(yaml.Representer.yaml_representers)
+    _CustomRepresenter.yaml_multi_representers.update(yaml.Representer.yaml_multi_representers)
 
     yaml.Constructor = _CustomConstructor
     yaml.Constructor.add_constructor("tag:yaml.org,2002:float", float_as_string_constructor)
