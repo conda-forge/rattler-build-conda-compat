@@ -26,11 +26,11 @@ def _yaml_represent_str(yaml_representer: SafeRepresenter, data: str) -> ScalarN
 def _yaml_object() -> YAML:
     yaml = YAML(typ="rt")
 
-    class _CustomConstructor(yaml.Constructor)
+    class _CustomConstructor(yaml.Constructor):
         yaml_constructors = {}
         yaml_multi_constructors = {}
 
-    class _CustomRepresenter(yaml.Representer)
+    class _CustomRepresenter(yaml.Representer):
         yaml_representers = {}
         yaml_multi_representers = {}
 
