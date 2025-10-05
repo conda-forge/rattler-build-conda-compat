@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import io
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from ruamel.yaml import YAML
 from ruamel.yaml.representer import SafeRepresenter, ScalarNode
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 # Custom constructor for loading floats as strings
@@ -27,12 +30,12 @@ def _yaml_object() -> YAML:
     yaml = YAML(typ="rt")
 
     class _CustomConstructor(yaml.Constructor):  # type: ignore[name-defined]
-        yaml_constructors: ClassVar = {}
-        yaml_multi_constructors: ClassVar = {}
+        yaml_constructors: ClassVar[dict[type, Callable]] = {}
+        yaml_multi_constructors: ClassVar[dict[type, Callable]] = {}
 
     class _CustomRepresenter(yaml.Representer):  # type: ignore[name-defined]
-        yaml_representers: ClassVar = {}
-        yaml_multi_representers: ClassVar = {}
+        yaml_representers: ClassVar[dict[type, Callable]] = {}
+        yaml_multi_representers: ClassVar[dict[type, Callable]] = {}
 
     _CustomConstructor.yaml_constructors.update(yaml.Constructor.yaml_constructors)
     _CustomConstructor.yaml_multi_constructors.update(yaml.Constructor.yaml_multi_constructors)
