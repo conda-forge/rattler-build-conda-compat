@@ -4,7 +4,7 @@ import copy
 import hashlib
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Literal, MutableMapping
+from typing import TYPE_CHECKING, Any, Literal
 
 import requests
 
@@ -13,6 +13,7 @@ from rattler_build_conda_compat.recipe_sources import get_all_sources
 from rattler_build_conda_compat.yaml import _dump_yaml_to_string, _yaml_object
 
 if TYPE_CHECKING:
+    from collections.abc import MutableMapping
     from pathlib import Path
 
 logger = logging.getLogger(__name__)

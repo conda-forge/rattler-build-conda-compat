@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import typing
-from collections.abc import MutableMapping
 from dataclasses import dataclass
-from typing import Any, List, Union, cast
+from typing import Any, cast
 
 from rattler_build_conda_compat.jinja.jinja import (
     RecipeWithContext,
@@ -16,10 +15,10 @@ from rattler_build_conda_compat.variant_config import variant_combinations
 from .conditional_list import ConditionalList, visit_conditional_list
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Iterator, MutableMapping
 
 
-OptionalUrlList = Union[str, List[str], None]
+OptionalUrlList = str | list[str] | None
 
 
 @dataclass(frozen=True)
@@ -56,7 +55,7 @@ def get_all_sources(recipe: MutableMapping[str, Any]) -> Iterator[MutableMapping
     A list of source objects.
     """
     sources = recipe.get("source", None)
-    sources = typing.cast(ConditionalList[MutableMapping[str, Any]], sources)
+    sources = typing.cast("ConditionalList[MutableMapping[str, Any]]", sources)
 
     # Try getting all url top-level sources
     if sources is not None:
@@ -67,7 +66,7 @@ def get_all_sources(recipe: MutableMapping[str, Any]) -> Iterator[MutableMapping
     cache_output = recipe.get("cache", None)
     if cache_output is not None:
         sources = cache_output.get("source", None)
-        sources = typing.cast(ConditionalList[MutableMapping[str, Any]], sources)
+        sources = typing.cast("ConditionalList[MutableMapping[str, Any]]", sources)
         if sources is not None:
             source_list = visit_conditional_list(sources, None)
             for source in source_list:
@@ -80,7 +79,7 @@ def get_all_sources(recipe: MutableMapping[str, Any]) -> Iterator[MutableMapping
     outputs = visit_conditional_list(outputs, None)
     for output in outputs:
         sources = output.get("source", None)
-        sources = typing.cast(ConditionalList[MutableMapping[str, Any]], sources)
+        sources = typing.cast("ConditionalList[MutableMapping[str, Any]]", sources)
         if sources is None:
             continue
         source_list = visit_conditional_list(sources, None)
@@ -123,7 +122,7 @@ def render_all_sources(  # noqa: C901
 
     def render(template: str | list[str], context: dict[str, str]) -> str | list[str]:
         if isinstance(template, list):
-            return [cast(str, render(t, context)) for t in template]
+            return [cast("str", render(t, context)) for t in template]
         template = env.from_string(template)
         return template.render(context)
 
@@ -151,14 +150,14 @@ def render_all_sources(  # noqa: C901
                     lambda x, combination=env.globals: _eval_selector(x, combination),  # type: ignore[misc]
                 ):
                     # we need to explicitly cast here
-                    elem_dict = typing.cast(dict[str, Any], elem)
+                    elem_dict = typing.cast("dict[str, Any]", elem)
                     sha256, md5 = None, None
                     if elem_dict.get("sha256") is not None:
                         sha256 = typing.cast(
-                            str, render(str(elem_dict["sha256"]), context_variables)
+                            "str", render(str(elem_dict["sha256"]), context_variables)
                         )
                     if elem_dict.get("md5") is not None:
-                        md5 = typing.cast(str, render(str(elem_dict["md5"]), context_variables))
+                        md5 = typing.cast("str", render(str(elem_dict["md5"]), context_variables))
                     if "url" in elem_dict:
                         as_url = Source(
                             url=render(elem_dict["url"], context_variables),

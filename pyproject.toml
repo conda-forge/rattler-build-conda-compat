@@ -34,7 +34,6 @@ ignore = [
     "T201",   # https://docs.astral.sh/ruff/rules/print/
     "A003",   # https://docs.astral.sh/ruff/rules/builtin-attribute-shadowing/
     "PTH",    # We dont want to change the API to pathlib just yet
-    "ANN101", # Deprecated
 ]
 exclude = [
     "src/rattler_build_conda_compat/lint.py",

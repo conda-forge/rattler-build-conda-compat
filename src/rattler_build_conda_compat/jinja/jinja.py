@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import jinja2
 from jinja2.sandbox import SandboxedEnvironment
@@ -15,6 +15,9 @@ from rattler_build_conda_compat.jinja.objects import (
 from rattler_build_conda_compat.jinja.utils import _MissingUndefined
 from rattler_build_conda_compat.loader import load_yaml
 from rattler_build_conda_compat.yaml import _dump_yaml_to_string
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 
 class RecipeWithContext(TypedDict, total=False):

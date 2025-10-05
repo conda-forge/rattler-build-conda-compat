@@ -57,7 +57,7 @@ def lint_about_contents(about_section, lints):
     for about_item in ["homepage", "license", "summary"]:
         # if the section doesn't exist, or is just empty, lint it.
         if not about_section.get(about_item, ""):
-            lints.append("The {} item is expected in the about section." "".format(about_item))
+            lints.append("The {} item is expected in the about section.".format(about_item))
 
 
 def lint_recipe_maintainers(maintainers_section, lints):
@@ -88,7 +88,7 @@ def lint_recipe_tests(test_section=dict(), outputs_section=list()):
                     has_outputs_test = True
                 else:
                     no_test_hints.append(
-                        "It looks like the '{}' output doesn't " "have any tests.".format(
+                        "It looks like the '{}' output doesn't have any tests.".format(
                             section.get("name", "???")
                         )
                     )
@@ -489,14 +489,14 @@ def run_conda_forge_specific(
 
     # 3: if the recipe dir is inside the example dir
     if recipe_dir is not None and "recipes/example/" in recipe_dir:
-        lints.append("Please move the recipe out of the example dir and " "into its own dir.")
+        lints.append("Please move the recipe out of the example dir and into its own dir.")
 
     # 4: Do not delete example recipe
     if is_staged_recipes and recipe_dir is not None:
         example_meta_fname = os.path.abspath(os.path.join(recipe_dir, "..", "example", "meta.yaml"))
 
         if not os.path.exists(example_meta_fname):
-            msg = "Please do not delete the example recipe found in " "`recipes/example/meta.yaml`."
+            msg = "Please do not delete the example recipe found in `recipes/example/meta.yaml`."
 
             if msg not in lints:
                 lints.append(msg)

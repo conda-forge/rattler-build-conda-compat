@@ -132,7 +132,7 @@ def load_all_requirements(content: dict[str, Any]) -> dict[str, Any]:
             filtered_reqs = {}
             # run_exports, ignore_run_exports are dicts of lists
             for key, sub_reqs in section_reqs.items():
-                key = cast(str, key)
+                key = cast("str", key)
                 filtered_sub_reqs = list(visit_conditional_list(sub_reqs))
                 if filtered_sub_reqs:
                     filtered_reqs[key] = filtered_sub_reqs

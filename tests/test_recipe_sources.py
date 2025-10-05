@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+
 from rattler_build_conda_compat.loader import load_yaml
 from rattler_build_conda_compat.recipe_sources import get_all_url_sources, render_all_sources
 
