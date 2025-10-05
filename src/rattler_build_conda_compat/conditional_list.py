@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union, cast
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -15,7 +15,7 @@ class IfStatement(Generic[T]):
     else_: T | list[T] | None
 
 
-ConditionalList = T | IfStatement[T] | list[T | IfStatement[T]]
+ConditionalList = Union[T, IfStatement[T], list[T | IfStatement[T]]]  # noqa: UP007
 
 
 def visit_conditional_list(  # noqa: C901
