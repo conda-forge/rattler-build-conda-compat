@@ -10,11 +10,11 @@ platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
 build_sdist = "pixi run python -m build --sdist"
 
 [dependencies]
-python = ">=3.10.18,<3.14"
+python = ">=3.10"
 python-build = ">=1.3.0,<2"
-rattler-build = ">=0.47.1,<0.48"
-conda-build = ">=25.9.0,<26"
-conda = ">=25.9.0,<26"
+rattler-build = ">=0.47.1,<1.0"
+conda-build = ">=25,<26"
+conda = ">=25,<26"
 pygithub = ">=2.8.1,<3"
 
 
