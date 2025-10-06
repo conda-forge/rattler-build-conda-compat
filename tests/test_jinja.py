@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import textwrap
 from pathlib import Path
 
 from rattler_build_conda_compat.jinja.filters import _version_to_build_string
@@ -10,7 +11,7 @@ from rattler_build_conda_compat.jinja.jinja import (
 )
 from rattler_build_conda_compat.jinja.utils import _MissingUndefined
 from rattler_build_conda_compat.loader import load_yaml
-from rattler_build_conda_compat.yaml import _dump_yaml_to_string
+from rattler_build_conda_compat.yaml import _dump_yaml_to_string, _yaml_object
 
 test_data = Path(__file__).parent / "data"
 
@@ -61,19 +62,36 @@ def test_context_rendering(snapshot) -> None:
 
 
 def test_load_recipe_context() -> None:
-    context = {
-        "name": "foo",
-        "version": "0.2.3",
-        "name_version": "${{ name }}-${{ version }}",
-        "version_length": '${{ version | split(".") | length }}',
-        "version_length_str": "'${{ version | split(\".\") | length }}'",
-    }
+    context_str = textwrap.dedent(
+        """
+        context:
+          name: stackvana-core
+          version: 0.2025.39
+          raw_major_version: '${{ (version | split("."))[0] }}'
+          raw_minor_version: '${{ (version | split("."))[1] }}'
+          raw_minor_version_ml: |
+            ${{ (version | split("."))[1] }}  # this one is an int
+          raw_minor_version_int: ${{ (version | split("."))[1] }}  # this one is an int too
+          raw_patch_version: '${{ (version | split("."))[2] }}'
+          patch_version: ${{ "_" + raw_patch_version if (raw_patch_version | length) == 2 else "_0"  + raw_patch_version }}
+          weekly_dm_tag: ${{ "w_" + raw_minor_version + patch_version }}
+          non_weekly_dm_tag: ${{ "v" + (version | replace(".", "_")) }}
+          dm_tag: ${{ weekly_dm_tag if raw_major_version == '0' else non_weekly_dm_tag }}
+        """
+    )
+    context = _yaml_object().load(context_str)["context"]
 
     loaded_context = load_recipe_context(context, jinja_env())
     assert loaded_context == {
-        "name": "foo",
-        "version": "0.2.3",
-        "name_version": "foo-0.2.3",
-        "version_length": 3,
-        "version_length_str": "3",
+        "version": "0.2025.39",
+        "name": "stackvana-core",
+        "dm_tag": "w_2025_39",
+        "non_weekly_dm_tag": "v0_2025_39",
+        "patch_version": "_39",
+        "raw_major_version": "0",
+        "raw_minor_version": "2025",
+        "raw_patch_version": "39",
+        "weekly_dm_tag": "w_2025_39",
+        "raw_minor_version_ml": 2025,
+        "raw_minor_version_int": 2025,
     }
