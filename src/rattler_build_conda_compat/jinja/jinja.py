@@ -106,7 +106,8 @@ def load_recipe_context(context: dict[str, str], jinja_env: jinja2.Environment) 
             # SingleQuotedScalarString and DoubleQuotedScalarString, correspond to strings
             # that are explicitly quoted in the yaml and thus are always string values in Python.
             # We skip the yaml inference for those types since it does not need to be done and
-            # they are already strings.
+            # they are already strings. To properly do the yaml inference, we'd have
+            # to requote the strings before passing them in.
             if type(value) in (SingleQuotedScalarString, DoubleQuotedScalarString):
                 context[key] = rendered_value
             else:
