@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 
 import jinja2
 from jinja2.sandbox import SandboxedEnvironment
+from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
 
 from rattler_build_conda_compat.jinja.filters import _bool, _split, _version_to_build_string
 from rattler_build_conda_compat.jinja.objects import (
@@ -96,13 +97,38 @@ def load_recipe_context(context: dict[str, str], jinja_env: jinja2.Environment) 
     Load all string values from the context dictionary as Jinja2 templates.
     Use linux-64 as default target_platform, build_platform, and mpi.
     """
+
     # Process each key-value pair in the dictionary
     for key, value in context.items():
         # If the value is a string, render it as a template
         if isinstance(value, str):
             template = jinja_env.from_string(value)
             rendered_value = template.render(context)
-            context[key] = load_yaml("value: " + rendered_value)["value"]
+            # In this repo, rumael.yaml is configured to return strings as special subtypes
+            # depending on how the user specified them in the yaml. Two of the subtypes,
+            # SingleQuotedScalarString and DoubleQuotedScalarString, correspond to strings
+            # that are explicitly quoted in the yaml and thus are always string values in Python.
+            # We skip the yaml inference for those types since it does not need to be done and
+            # they are already strings. To properly do the yaml inference, we'd have
+            # to requote the strings before passing them in.
+            if type(value) in (SingleQuotedScalarString, DoubleQuotedScalarString):
+                context[key] = rendered_value
+            else:
+                # We have to escape sequences like \n, \t, etc. because they would be
+                # escaped if we wrote the rendered text to a yaml object. We don't directly
+                # dump via yaml since that will cause more type errors due to things still
+                # being strings (e.g., for an int 8 we have yaml.dump({"value": "8"}, fp)
+                # which yields "value: '8'\n" which would then be read as a string.).
+                # The sequence of calls `.encode("unicode_escape").decode("utf-8")`
+                # escapes the escape sequences and then converts back to a string
+                # from bytes, so we get "\n" -> "\\n". We then reverse the operations
+                # if the output type is a string.
+                _value = load_yaml(
+                    "value: " + rendered_value.encode("unicode_escape").decode("utf-8")
+                )["value"]
+                if isinstance(_value, str):
+                    _value = _value.encode("utf-8").decode("unicode_escape")
+                context[key] = _value
 
     return context
 
