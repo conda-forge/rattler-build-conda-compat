@@ -111,7 +111,12 @@ def load_recipe_context(context: dict[str, str], jinja_env: jinja2.Environment) 
             if type(value) in (SingleQuotedScalarString, DoubleQuotedScalarString):
                 context[key] = rendered_value
             else:
-                context[key] = load_yaml("value: " + rendered_value)["value"]
+                _value = load_yaml(
+                    "value: " + rendered_value.encode("unicode_escape").decode("utf-8")
+                )["value"]
+                if isinstance(_value, str):
+                    _value = _value.encode("utf-8").decode("unicode_escape")
+                context[key] = _value
 
     return context
 
