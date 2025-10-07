@@ -111,7 +111,21 @@ def load_recipe_context(context: dict[str, str], jinja_env: jinja2.Environment) 
             if type(value) in (SingleQuotedScalarString, DoubleQuotedScalarString):
                 context[key] = rendered_value
             else:
-                context[key] = load_yaml("value: " + rendered_value)["value"]
+                # We have to escape sequences like \n, \t, etc. because they would be
+                # escaped if we wrote the rendered text to a yaml object. We don't directly
+                # dump via yaml since that will cause more type errors due to things still
+                # being strings (e.g., for an int 8 we have yaml.dump({"value": "8"}, fp)
+                # which yields "value: '8'\n" which would then be read as a string.).
+                # The sequence of calls `.encode("unicode_escape").decode("utf-8")`
+                # escapes the escape sequences and then converts back to a string
+                # from bytes, so we get "\n" -> "\\n". We then reverse the operations
+                # if the output type is a string.
+                _value = load_yaml(
+                    "value: " + rendered_value.encode("unicode_escape").decode("utf-8")
+                )["value"]
+                if isinstance(_value, str):
+                    _value = _value.encode("utf-8").decode("unicode_escape")
+                context[key] = _value
 
     return context
 

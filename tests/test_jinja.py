@@ -63,7 +63,7 @@ def test_context_rendering(snapshot) -> None:
 
 def test_load_recipe_context() -> None:
     context_str = textwrap.dedent(
-        """
+        r"""
         context:
           name: stackvana-core
           version: 0.2025.39
@@ -77,6 +77,40 @@ def test_load_recipe_context() -> None:
           weekly_dm_tag: ${{ "w_" + raw_minor_version + patch_version }}
           non_weekly_dm_tag: ${{ "v" + (version | replace(".", "_")) }}
           dm_tag: ${{ weekly_dm_tag if raw_major_version == '0' else non_weekly_dm_tag }}
+          big_pipe_string: |
+            A big string
+            on a lot of lines
+          big_folded_string: >
+            A big string
+            on a lot of lines
+          big_flow_string: A big string
+
+            on a lot of lines
+          big_sq_flow_string: 'A big string
+
+            on a "lot" ''of'' lines'
+          big_dq_flow_string: "A big string
+
+            on a \"lot\" 'of' lines"
+          big_pipe_string_plus: |+
+            A big string
+            on a lot of lines
+
+
+          big_pipe_string_minus: |-
+            A big string
+            on a lot of lines
+          big_folded_string_plus: >+
+            A big string
+            on a lot of lines
+
+
+          big_folded_string_minus: >-
+            A big string
+            on a lot of lines
+
+
+
         """
     )
     context = _yaml_object().load(context_str)["context"]
@@ -94,4 +128,13 @@ def test_load_recipe_context() -> None:
         "weekly_dm_tag": "w_2025_39",
         "raw_minor_version_ml": 2025,
         "raw_minor_version_int": 2025,
+        "big_folded_string": "A big string on a lot of lines",
+        "big_pipe_string": "A big string\non a lot of lines",
+        "big_dq_flow_string": "A big string\non a \"lot\" 'of' lines",
+        "big_flow_string": "A big string\non a lot of lines",
+        "big_sq_flow_string": "A big string\non a \"lot\" 'of' lines",
+        "big_pipe_string_minus": "A big string\non a lot of lines",
+        "big_pipe_string_plus": "A big string\non a lot of lines\n\n",
+        "big_folded_string_minus": "A big string on a lot of lines",
+        "big_folded_string_plus": "A big string on a lot of lines\n\n",
     }
