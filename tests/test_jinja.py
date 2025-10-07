@@ -92,6 +92,25 @@ def test_load_recipe_context() -> None:
           big_dq_flow_string: "A big string
 
             on a \"lot\" 'of' lines"
+          big_pipe_string_plus: |+
+            A big string
+            on a lot of lines
+
+
+          big_pipe_string_minus: |-
+            A big string
+            on a lot of lines
+          big_folded_string_plus: >+
+            A big string
+            on a lot of lines
+
+
+          big_folded_string_minus: >-
+            A big string
+            on a lot of lines
+
+
+
         """
     )
     context = _yaml_object().load(context_str)["context"]
@@ -114,4 +133,8 @@ def test_load_recipe_context() -> None:
         "big_dq_flow_string": "A big string\non a \"lot\" 'of' lines",
         "big_flow_string": "A big string\non a lot of lines",
         "big_sq_flow_string": "A big string\non a \"lot\" 'of' lines",
+        "big_pipe_string_minus": "A big string\non a lot of lines",
+        "big_pipe_string_plus": "A big string\non a lot of lines\n\n",
+        "big_folded_string_minus": "A big string on a lot of lines",
+        "big_folded_string_plus": "A big string on a lot of lines\n\n",
     }
