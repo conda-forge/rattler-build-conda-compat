@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "rattler-build-conda-compat"
 description = "A package for exposing rattler-build API for conda-smithy"
 # run `pixi upgrade rattler-build-conda-compat` after changing
-version = "1.4.8"
+version = "1.4.9"
 readme = "README.md"
 authors = [{ name = "Nichita Morcotilo", email = "nichita@prefix.dev" }]
 license = { file = "LICENSE.txt" }
