@@ -1,7 +1,8 @@
 import io
 
-from rattler_build_conda_compat import yaml as rbcc_yaml
 from ruamel.yaml import YAML
+
+from rattler_build_conda_compat import yaml as rbcc_yaml
 
 
 def test_yaml_dump_no_global_changes() -> None:

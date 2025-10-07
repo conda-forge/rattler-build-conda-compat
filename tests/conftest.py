@@ -7,12 +7,12 @@ from typing import Any
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture
 def data_dir() -> Path:
     return Path(__file__).parent / "data"
 
 
-@pytest.fixture()
+@pytest.fixture
 def python_recipe(tmpdir: Path) -> str:
     recipe_dir = tmpdir / "recipe"
     mkdir(recipe_dir)
@@ -28,7 +28,7 @@ def python_recipe(tmpdir: Path) -> str:
     return recipe_dir
 
 
-@pytest.fixture()
+@pytest.fixture
 def env_recipe(tmpdir: Path) -> str:
     recipe_dir = tmpdir / "recipe"
     mkdir(recipe_dir)
@@ -40,12 +40,12 @@ def env_recipe(tmpdir: Path) -> str:
     return recipe_dir
 
 
-@pytest.fixture()
+@pytest.fixture
 def unix_namespace() -> dict[str, Any]:
     return {"linux-64": True, "unix": True}
 
 
-@pytest.fixture()
+@pytest.fixture
 def recipe_dir(tmpdir: Path) -> Path:
     py_recipe = Path("tests/data/py_recipe.yaml").read_text()
     recipe_dir = tmpdir / "recipe"
@@ -56,7 +56,7 @@ def recipe_dir(tmpdir: Path) -> Path:
     return recipe_dir
 
 
-@pytest.fixture()
+@pytest.fixture
 def old_recipe_dir(tmpdir: Path) -> Path:
     recipe_dir = tmpdir / "recipe"
     mkdir(recipe_dir)
@@ -67,27 +67,27 @@ def old_recipe_dir(tmpdir: Path) -> Path:
     return recipe_dir
 
 
-@pytest.fixture()
+@pytest.fixture
 def mamba_recipe() -> Path:
     return Path("tests/data/mamba_recipe.yaml")
 
 
-@pytest.fixture()
+@pytest.fixture
 def py_abi3_recipe() -> Path:
     return Path("tests/data/py_abi3.yaml")
 
 
-@pytest.fixture()
+@pytest.fixture
 def rich_recipe() -> Path:
     return Path("tests/data/rich_recipe.yaml")
 
 
-@pytest.fixture()
+@pytest.fixture
 def multiple_outputs() -> Path:
     return Path("tests/data/multiple_outputs.yaml")
 
 
-@pytest.fixture()
+@pytest.fixture
 def feedstock_dir_with_recipe(tmpdir: Path) -> Path:
     feedstock_dir = tmpdir / "feedstock"
 

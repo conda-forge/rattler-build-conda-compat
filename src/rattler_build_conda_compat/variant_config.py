@@ -25,7 +25,9 @@ def variant_combinations(data: dict[str, list[str]]) -> list[dict[str, str]]:
     other_combinations = list(product(*[data[key] for key in other_keys]))
 
     # Create zipped combinations
-    zipped_combinations = [list(zip(*[data[key] for key in zip_group])) for zip_group in zip_keys]
+    zipped_combinations = [
+        list(zip(*[data[key] for key in zip_group], strict=False)) for zip_group in zip_keys
+    ]
 
     # Combine zipped combinations
     zipped_product = list(product(*zipped_combinations))
@@ -36,11 +38,11 @@ def variant_combinations(data: dict[str, list[str]]) -> list[dict[str, str]]:
         for zipped_combo in zipped_product:
             combined = {}
             # Add non-zipped items
-            for key, value in zip(other_keys, other_combo):
+            for key, value in zip(other_keys, other_combo, strict=False):
                 combined[key] = str(value)
             # Add zipped items
-            for zip_group, zip_values in zip(zip_keys, zipped_combo):
-                for key, value in zip(zip_group, zip_values):
+            for zip_group, zip_values in zip(zip_keys, zipped_combo, strict=False):
+                for key, value in zip(zip_group, zip_values, strict=False):
                     combined[key] = str(value)
             final_combinations.append(combined)
 

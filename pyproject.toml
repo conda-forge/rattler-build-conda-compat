@@ -16,10 +16,9 @@ dependencies = [
     "tomli>=2.0.1,<3",
     "ruamel.yaml>=0.18.6,<0.19",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 
 [tool.ruff]
-target-version = "py38"
 line-length = 100
 
 [tool.ruff.format]
@@ -36,7 +35,6 @@ ignore = [
     "T201",   # https://docs.astral.sh/ruff/rules/print/
     "A003",   # https://docs.astral.sh/ruff/rules/builtin-attribute-shadowing/
     "PTH",    # We dont want to change the API to pathlib just yet
-    "ANN101", # Deprecated
 ]
 exclude = [
     "src/rattler_build_conda_compat/lint.py",
@@ -52,5 +50,4 @@ venvPath = ".pixi/envs"
 venv = "py312"
 
 [tool.mypy]
-python_version = "3.8"
 allow_redefinition = true

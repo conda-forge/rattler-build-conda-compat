@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Generic, List, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union, cast
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -15,7 +15,7 @@ class IfStatement(Generic[T]):
     else_: T | list[T] | None
 
 
-ConditionalList = Union[T, IfStatement[T], List[Union[T, IfStatement[T]]]]
+ConditionalList = Union[T, IfStatement[T], list[T | IfStatement[T]]]  # noqa: UP007
 
 
 def visit_conditional_list(  # noqa: C901
@@ -62,8 +62,8 @@ def visit_conditional_list(  # noqa: C901
                         yield from yield_from_list(otherwise)
             else:
                 # In this case its not an if statement
-                yield cast(T, element)
+                yield cast("T", element)
         # If the element is not a dictionary, just yield it
         else:
             # (tim) I get a pyright error here, but I don't know how to fix it
-            yield cast(T, element)
+            yield cast("T", element)
