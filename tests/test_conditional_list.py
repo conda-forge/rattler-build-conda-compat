@@ -42,3 +42,14 @@ def test_visit_conditional_list() -> None:
             evaluator=lambda x: x,
         )
     ) == [3, 4]
+
+
+def test_visit_conditional_list_nested_if() -> None:
+    assert list(
+        visit_conditional_list(
+            [
+                {"if": True, "then": {"if": True, "then": 1, "else": 2}, "else": 3},
+                {"if": False, "then": [4]},
+            ]
+        )
+    ) == [1, 2, 3, 4]

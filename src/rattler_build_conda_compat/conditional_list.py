@@ -52,14 +52,14 @@ def visit_conditional_list(  # noqa: C901
                 # Evaluate the if expression if the evaluator is provided
                 if evaluator:
                     if evaluator(expr):
-                        yield from yield_from_list(then)
+                        yield from visit_conditional_list(then)
                     elif otherwise:
-                        yield from yield_from_list(otherwise)
+                        yield from visit_conditional_list(otherwise)
                 # Otherwise, just yield the branches
                 else:
-                    yield from yield_from_list(then)
+                    yield from visit_conditional_list(then)
                     if otherwise:
-                        yield from yield_from_list(otherwise)
+                        yield from visit_conditional_list(otherwise)
             else:
                 # In this case its not an if statement
                 yield cast("T", element)
