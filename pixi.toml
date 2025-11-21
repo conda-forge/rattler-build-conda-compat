@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "rattler-build-conda-compat"
 description = "A package for exposing rattler-build API for conda-smithy"
 authors = ["nichmor <nmorkotilo@gmail.com>"]
@@ -59,6 +59,9 @@ python = "3.11.*"
 [feature.py310.dependencies]
 python = "3.10.*"
 
+[feature.pixi-pycharm.dependencies]
+pixi-pycharm = "*"
+
 [environments]
 py313 = { features = ["py313", "tests"] }
 py312 = { features = ["py312", "tests"] }
@@ -66,3 +69,4 @@ py311 = ["py311", "tests"]
 py310 = ["py310", "tests"]
 lint = { features = ["lint"], no-default-feature = true }
 type-checking = { features = ["type-checking"] }
+pixi-pycharm = { features = ["pixi-pycharm"], no-default-feature = true }
