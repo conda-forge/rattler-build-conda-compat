@@ -127,7 +127,7 @@ def load_all_requirements(content: dict[str, Any]) -> dict[str, Any]:
             section_reqs = {  # noqa: PLW2901
                 "weak": section_reqs
             }
-        filtered_reqs: list | dict[str, list]
+        filtered_reqs: list | dict[str, list] = []
         if isinstance(section_reqs, dict):
             filtered_reqs = {}
             # run_exports, ignore_run_exports are dicts of lists
@@ -136,11 +136,8 @@ def load_all_requirements(content: dict[str, Any]) -> dict[str, Any]:
                 filtered_sub_reqs = list(visit_conditional_list(sub_reqs))
                 if filtered_sub_reqs:
                     filtered_reqs[key] = filtered_sub_reqs
-        else:
+        elif section_reqs is not None:
             filtered_reqs = list(visit_conditional_list(section_reqs))
-
-        if not filtered_reqs:
-            continue
 
         requirements_section[section] = filtered_reqs
 
