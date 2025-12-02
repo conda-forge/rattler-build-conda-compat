@@ -6,6 +6,8 @@ requirements:
         - ${{ cdt('xorg-x11-proto-devel') }}
   host:
     - python
+  # This empty run sections helps us test for parsing
+  # in this common syntax around conda-forge recipes
   run:
   run_exports:
     weak:
