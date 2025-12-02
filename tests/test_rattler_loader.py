@@ -26,6 +26,7 @@ def test_load_all_requirements() -> None:
 
     content = load_all_requirements(recipe_content)
     print(content)
+    assert content["run"] == []
     assert content["run_exports"] == {
         "weak": ["weak-then", "weak-else", "weakreq"],
         "strong": ["strongreq"],
