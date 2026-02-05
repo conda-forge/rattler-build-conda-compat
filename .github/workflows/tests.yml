@@ -9,7 +9,7 @@ concurrency:
 jobs:
   run_tests:
     name: ${{ matrix.pixi-environment }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     strategy:
       fail-fast: false
       matrix:
