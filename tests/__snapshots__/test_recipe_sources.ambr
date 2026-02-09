@@ -21,6 +21,13 @@
     Source(url=['https://foo.com/win-64/zip.zip', 'https://mirror.com/win-64/zip.zip'], template=['https://foo.com/${{ target_platform }}/zip.zip', 'https://mirror.com/${{ target_platform }}/zip.zip'], context={'name': 'foobar', 'version': '1.2.3'}, sha256='xxx', md5=None),
   })
 # ---
+# name: test_outputs_only_source_render
+  set({
+    Source(url='https://pypi.org/packages/source/d/dirac/dirac-9.0.16.tar.gz', template='https://pypi.org/packages/source/d/dirac/dirac-${{ version }}.tar.gz', context={'version': '9.0.16'}, sha256='548b85b3b0ecf17487f3deba5073763583dd7eb812bf063f409153fc44c7402f', md5=None),
+    Source(url='https://pypi.org/packages/source/d/diraccommon/diraccommon-9.0.16.tar.gz', template='https://pypi.org/packages/source/d/diraccommon/diraccommon-${{ version }}.tar.gz', context={'version': '9.0.16'}, sha256='7ae43c63075770e1314c40f2e7bd7708ae22a45262489e8912b881adf9f1aa2c', md5=None),
+    Source(url='https://raw.githubusercontent.com/DIRACGrid/DIRAC/refs/tags/v9.0.16/LICENSE', template='https://raw.githubusercontent.com/DIRACGrid/DIRAC/refs/tags/v${{ version }}/LICENSE', context={'version': '9.0.16'}, sha256='bb2af8a15ea39a351e7a95d93cf8e4251c1ae6ae4cac8ee3a89cf9b155cd6e54', md5=None),
+  })
+# ---
 # name: test_variant_variables_source_render
   set({
     Source(url='https://pypi.org/packages/source/p/polars-lts-cpu/polars_lts_cpu-1.20.0.tar.gz', template="https://pypi.org/packages/source/p/${{ polars_variant }}/${{ polars_variant | replace('-', '_') }}-${{ version }}.tar.gz", context={'version': '1.20.0'}, sha256='f8770fe1a752f60828ec73e6215c7dadcb2badd1f34dcb1def7a0f4ca0ac36f8', md5=None),

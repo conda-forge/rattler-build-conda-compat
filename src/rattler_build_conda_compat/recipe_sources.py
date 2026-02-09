@@ -109,6 +109,35 @@ def get_all_url_sources(recipe: MutableMapping[str, Any]) -> Iterator[str]:
     return (get_first_url(source) for source in get_all_sources(recipe) if "url" in source)
 
 
+def _collect_source_sections(
+    recipe: RecipeWithContext,
+    selector: typing.Callable[[str], bool],
+) -> list[Any]:
+    """Collect raw source sections from top-level, cache, and outputs."""
+    sections: list[Any] = []
+
+    top_level = recipe.get("source")
+    if top_level:
+        sections.append(top_level)
+
+    cache = recipe.get("cache")
+    if cache is not None:
+        cache = typing.cast("dict[str, Any]", cache)
+        cache_sources = cache.get("source")
+        if cache_sources:
+            sections.append(cache_sources)
+
+    outputs = recipe.get("outputs")
+    if outputs:
+        for output in visit_conditional_list(outputs, selector):
+            output_dict = typing.cast("dict[str, Any]", output)
+            output_sources = output_dict.get("source")
+            if output_sources:
+                sections.append(output_sources)
+
+    return sections
+
+
 def render_all_sources(  # noqa: C901
     recipe: RecipeWithContext,
     variants: list[dict[str, list[str]]],
@@ -140,14 +169,16 @@ def render_all_sources(  # noqa: C901
             context_variables = load_recipe_context(context, env)
 
             # now evaluate the if / else statements
-            sources = recipe.get("source")
-            if sources:
-                if not isinstance(sources, list):
-                    sources = [sources]
+            # collect source sections from all locations: top-level, cache, and outputs
+            selector = lambda x, combination=env.globals: _eval_selector(x, combination)  # type: ignore[misc]  # noqa: E731
+            all_source_sections = _collect_source_sections(recipe, selector)
+
+            for sources in all_source_sections:
+                source_list = sources if isinstance(sources, list) else [sources]
 
                 for elem in visit_conditional_list(
-                    sources,
-                    lambda x, combination=env.globals: _eval_selector(x, combination),  # type: ignore[misc]
+                    source_list,
+                    selector,
                 ):
                     # we need to explicitly cast here
                     elem_dict = typing.cast("dict[str, Any]", elem)

@@ -53,6 +53,17 @@ def test_conditional_source_render(snapshot) -> None:
     assert sources == snapshot
 
 
+def test_outputs_only_source_render(snapshot) -> None:
+    outputs_only = test_data / "outputs_only_sources.yaml"
+
+    recipe_yaml = load_yaml(outputs_only.read_text())
+    variants: list[dict[str, list[str]]] = [{}]
+
+    sources = render_all_sources(recipe_yaml, variants)
+    assert len(sources) == 3
+    assert sources == snapshot
+
+
 def test_variant_variables_source_render(snapshot) -> None:
     polars = test_data / "polars" / "sources.yaml"
     variants = (test_data / "polars" / "ci_support").glob("*.yaml")
