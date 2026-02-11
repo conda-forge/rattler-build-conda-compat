@@ -1,12 +1,11 @@
 [build-system]
-requires = ["hatchling>=1.24"]
+requires = ["hatchling>=1.24", "hatch-vcs>=0.4"]
 build-backend = "hatchling.build"
 
 [project]
 name = "rattler-build-conda-compat"
 description = "A package for exposing rattler-build API for conda-smithy"
-# run `pixi update rattler-build-conda-compat` after changing
-version = "1.4.10"
+dynamic = ["version"]
 readme = "README.md"
 authors = [{ name = "Nichita Morcotilo", email = "nichita@prefix.dev" }]
 license = { file = "LICENSE.txt" }
@@ -48,6 +47,12 @@ exclude = [
 [tool.pyright]
 venvPath = ".pixi/envs"
 venv = "py312"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/rattler_build_conda_compat/_version.py"
 
 [tool.mypy]
 allow_redefinition = true
