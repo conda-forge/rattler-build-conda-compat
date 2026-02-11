@@ -1,0 +1,25 @@
+context:
+  version: 9.0.16
+
+recipe:
+  name: dirac-grid
+  version: ${{ version }}
+
+outputs:
+  - package:
+      name: diraccommon
+      version: ${{ version }}
+
+    source:
+      - url: https://pypi.org/packages/source/d/diraccommon/diraccommon-${{ version }}.tar.gz
+        sha256: 7ae43c63075770e1314c40f2e7bd7708ae22a45262489e8912b881adf9f1aa2c
+      - url: https://raw.githubusercontent.com/DIRACGrid/DIRAC/refs/tags/v${{ version }}/LICENSE
+        sha256: bb2af8a15ea39a351e7a95d93cf8e4251c1ae6ae4cac8ee3a89cf9b155cd6e54
+
+  - package:
+      name: dirac-grid
+      version: ${{ version }}
+
+    source:
+      - url: https://pypi.org/packages/source/d/dirac/dirac-${{ version }}.tar.gz
+        sha256: 548b85b3b0ecf17487f3deba5073763583dd7eb812bf063f409153fc44c7402f
