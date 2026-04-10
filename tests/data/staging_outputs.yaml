@@ -1,0 +1,27 @@
+context:
+  version: 1.2.3
+
+outputs:
+  - staging:
+      name: libfoo-build
+    source:
+      - url: https://example.com/libfoo-${{ version }}.tar.gz
+        sha256: 0000000000000000000000000000000000000000000000000000000000000000
+    build:
+      script: build_libfoo.sh
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+
+  - package:
+      name: libfoo
+      version: ${{ version }}
+    inherit: libfoo-build
+    build:
+      script: install_libfoo.sh
+    requirements:
+      run:
+        - python
+    tests:
+      - script:
+          - test -f $PREFIX/lib/libfoo.so

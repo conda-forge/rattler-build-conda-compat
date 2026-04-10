@@ -63,15 +63,6 @@ def get_all_sources(recipe: MutableMapping[str, Any]) -> Iterator[MutableMapping
         for source in source_list:
             yield source
 
-    cache_output = recipe.get("cache", None)
-    if cache_output is not None:
-        sources = cache_output.get("source", None)
-        sources = typing.cast("ConditionalList[MutableMapping[str, Any]]", sources)
-        if sources is not None:
-            source_list = visit_conditional_list(sources, None)
-            for source in source_list:
-                yield source
-
     outputs = recipe.get("outputs", None)
     if outputs is None:
         return
