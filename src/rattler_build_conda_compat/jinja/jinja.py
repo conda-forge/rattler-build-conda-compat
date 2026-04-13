@@ -162,4 +162,4 @@ def render_recipe_with_context(
     template = env.from_string(_dump_yaml_to_string(recipe_content))
     rendered_content = template.render(context_variables)
 
-    return load_yaml(rendered_content)
+    return load_yaml(rendered_content)  # type: ignore[no-any-return]

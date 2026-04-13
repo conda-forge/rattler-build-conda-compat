@@ -30,7 +30,7 @@ class Source:
     md5: str | None = None
 
     def __getitem__(self, key: str) -> str | list[str] | None:
-        return self.__dict__[key]
+        return cast("str | list[str] | None", self.__dict__[key])
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Source):
@@ -93,9 +93,10 @@ def get_all_url_sources(recipe: MutableMapping[str, Any]) -> Iterator[str]:
     """
 
     def get_first_url(source: MutableMapping[str, Any]) -> str:
-        if isinstance(source["url"], list):
-            return source["url"][0]
-        return source["url"]
+        url = source["url"]
+        if isinstance(url, list):
+            return str(url[0])
+        return str(url)
 
     return (get_first_url(source) for source in get_all_sources(recipe) if "url" in source)
 
@@ -161,7 +162,7 @@ def render_all_sources(  # noqa: C901
 
             # now evaluate the if / else statements
             # collect source sections from all locations: top-level, cache, and outputs
-            selector = lambda x, combination=env.globals: _eval_selector(x, combination)  # type: ignore[misc]  # noqa: E731
+            selector = lambda x, combination=env.globals: _eval_selector(x, combination)  # noqa: E731
             all_source_sections = _collect_source_sections(recipe, selector)
 
             for sources in all_source_sections:

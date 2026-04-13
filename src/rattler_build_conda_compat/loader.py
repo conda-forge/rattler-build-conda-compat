@@ -71,7 +71,7 @@ def _eval_selector(
                 cleaned_selector = selector.strip("(").rstrip(")")
                 namespace[cleaned_selector] = True
 
-    return eval(condition, {}, UndefinedDictWrapper(namespace))  # type: ignore[arg-type] # noqa: S307
+    return bool(eval(condition, {}, UndefinedDictWrapper(namespace)))  # type: ignore[arg-type] # noqa: S307
 
 
 def _render_recipe(
@@ -127,7 +127,7 @@ def load_all_requirements(content: dict[str, Any]) -> dict[str, Any]:
             section_reqs = {  # noqa: PLW2901
                 "weak": section_reqs
             }
-        filtered_reqs: list | dict[str, list] = []
+        filtered_reqs: list[Any] | dict[str, list[Any]] = []
         if isinstance(section_reqs, dict):
             filtered_reqs = {}
             # run_exports, ignore_run_exports are dicts of lists
@@ -144,7 +144,7 @@ def load_all_requirements(content: dict[str, Any]) -> dict[str, Any]:
     return requirements_section
 
 
-def load_all_tests(content: dict[str, Any]) -> list[dict]:
+def load_all_tests(content: dict[str, Any]) -> list[dict[str, Any]]:
     tests_section = content.get("tests", [])
     if not tests_section:
         return []
