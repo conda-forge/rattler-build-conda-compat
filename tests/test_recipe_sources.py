@@ -20,6 +20,14 @@ test_data = Path(__file__).parent / "data"
             "outputs_source.yaml",
             ["https://foo.com", "https://bar.com", "https://baz.com", "https://qux.com"],
         ),
+        (
+            "staging_outputs.yaml",
+            ["https://example.com/libfoo-${{ version }}.tar.gz"],
+        ),
+        (
+            "staging_outputs_inherit_extended.yaml",
+            ["https://example.com/libbar-${{ version }}.tar.gz"],
+        ),
     ],
 )
 def test_recipe_sources(partial_recipe: str, expected_output: list[str]) -> None:

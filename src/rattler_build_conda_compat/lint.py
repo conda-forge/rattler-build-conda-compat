@@ -16,6 +16,7 @@ from jsonschema import ValidationError
 from textwrap import indent
 
 from rattler_build_conda_compat.loader import load_yaml
+from rattler_build_conda_compat.outputs import is_staging_output
 
 SCHEMA_URL = "https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json"
 
@@ -83,6 +84,9 @@ def lint_recipe_tests(test_section=dict(), outputs_section=list()):
             has_outputs_test = False
             no_test_hints = []
             for section in outputs_section:
+                if is_staging_output(section):
+                    # Staging outputs produce no artifact, so tests do not apply.
+                    continue
                 test_section = section.get("tests", {})
                 if any(key in TEST_KEYS for key in test_section):
                     has_outputs_test = True
@@ -508,6 +512,11 @@ def run_conda_forge_specific(
     host_reqs = requirements_section.get("host") or []
     run_reqs = requirements_section.get("run") or []
     for out in outputs_section:
+        if is_staging_output(out):
+            # Staging outputs have restricted requirements (no `run:`) and
+            # produce no artifact, so conda-forge-specific runtime lints
+            # should not be applied to them.
+            continue
         _req = out.get("requirements") or {}
         if isinstance(_req, Mapping):
             build_reqs += _req.get("build") or []
