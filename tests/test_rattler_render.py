@@ -92,7 +92,12 @@ def test_metadata_when_rendering_multiple_output(
     recipe_path = feedstock_dir_with_recipe / "recipe" / "recipe.yaml"
     (recipe_path).write_text(multiple_outputs.read_text(), encoding="utf8")
 
-    rendered = render(str(recipe_path), platform="linux", arch="64")
+    rendered = render(
+        str(recipe_path),
+        variants={"python": ["3.12"]},
+        platform="linux",
+        arch="64",
+    )
 
     assert rendered[0][0].name() == "libmamba"
     assert rendered[0][0].version() == "1.5.8"
@@ -106,7 +111,7 @@ def test_used_variant(feedstock_dir_with_recipe: Path, multiple_outputs: Path) -
     # on outputs from the given package
     variants = {
         "libmamba": ["1", "2"],
-        "unused": "scalar",
+        "unused": ["scalar"],
         "python": ["3.12", "3.13"],
     }
     rendered = render(str(recipe_path), variants=variants, platform="linux", arch="64")
@@ -144,7 +149,10 @@ def test_bool_roundtrip(feedstock_dir_with_recipe: Path, py_abi3_recipe: Path) -
     rendered = render(str(recipe_path), variants=variants, platform="linux", arch="64")
     # 2 outputs, one is_abi3=true, one is_abi3=false
     assert len(rendered) == 2
-    meta_abi3, meta_noabi3 = rendered[0][0], rendered[1][0]
+    metas_by_abi3 = {
+        meta[0].meta["build_configuration"]["variant"]["is_abi3"]: meta[0] for meta in rendered
+    }
+    meta_abi3, meta_noabi3 = metas_by_abi3[True], metas_by_abi3[False]
     # make sure result is still conda-build-style string
     assert meta_abi3.get_used_variant()["is_abi3"] == "true"
     assert meta_noabi3.get_used_variant()["is_abi3"] == "false"
