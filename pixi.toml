@@ -46,7 +46,7 @@ ruff = ">=0.13.3,<0.14"
 
 [feature.lint.tasks]
 pre-commit-install = "pre-commit install"
-pre-commit-run = "pre-commit run"
+pre-commit-run = "pre-commit run --all-files"
 
 [feature.type-checking.dependencies]
 mypy = ">=1.10.1,<2"

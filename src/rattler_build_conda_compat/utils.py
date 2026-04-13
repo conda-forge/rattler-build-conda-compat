@@ -3,13 +3,17 @@ import fnmatch
 from logging import getLogger
 import os
 from pathlib import Path
-from typing import Any, Iterable, Literal
+from typing import Any, Callable, Iterable, Iterator, Literal
 
 
 VALID_METAS = ("recipe.yaml",)
 
 
-def islist(arg, uniform=False, include_dict=True):
+def islist(
+    arg: object,
+    uniform: bool | Callable[[Any], bool] = False,
+    include_dict: bool = True,
+) -> bool:
     """
     Check whether `arg` is a `list`. Optionally determine whether the list elements
     are all uniform.
@@ -70,7 +74,7 @@ def islist(arg, uniform=False, include_dict=True):
         return False
 
 
-def ensure_list(arg, include_dict=True):
+def ensure_list(arg: Any, include_dict: bool = True) -> list[Any]:
     """
     Ensure the object is a list. If not return it in a list.
 
@@ -89,7 +93,11 @@ def ensure_list(arg, include_dict=True):
         return [arg]
 
 
-def rec_glob(path, patterns, ignores=None):
+def rec_glob(
+    path: str | os.PathLike[str],
+    patterns: str | Iterable[str],
+    ignores: str | Iterable[str] | None = None,
+) -> Iterator[str]:
     """
     Recursively searches path for filename patterns.
 
@@ -113,7 +121,7 @@ def rec_glob(path, patterns, ignores=None):
                 yield os.path.join(path, f)
 
 
-def find_recipe(path):
+def find_recipe(path: str | os.PathLike[str]) -> str:
     """
     vendored from conda_build.utils to persist same API flow
 
@@ -125,6 +133,7 @@ def find_recipe(path):
     """
     # if initial path is absolute then any path we find (via rec_glob)
     # will also be absolute
+    path = os.fspath(path)
     if not os.path.isabs(path):
         path = os.path.normpath(os.path.join(os.getcwd(), path))
 
@@ -184,9 +193,9 @@ def _get_recipe_metadata(meta: dict[str, Any], field: _Metadata, rendered: bool 
     If recipe was rendered by rattler-build, they are always present under recipe.package field.
     """
     if rendered:
-        return meta.get("recipe", {}).get("package", {}).get(field, "")
-
-    if "outputs" in meta:
-        return meta.get("recipe", {}).get(field, "")
+        value = meta.get("recipe", {}).get("package", {}).get(field, "")
+    elif "outputs" in meta:
+        value = meta.get("recipe", {}).get(field, "")
     else:
-        return meta.get("package", {}).get(field, "")
+        value = meta.get("package", {}).get(field, "")
+    return str(value) if value else ""

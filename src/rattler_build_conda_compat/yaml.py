@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import io
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from ruamel.yaml import YAML
 from ruamel.yaml.representer import SafeRepresenter, ScalarNode
@@ -9,10 +9,13 @@ from ruamel.yaml.representer import SafeRepresenter, ScalarNode
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from ruamel.yaml.constructor import RoundTripConstructor
+    from ruamel.yaml.nodes import Node
+
 
 # Custom constructor for loading floats as strings
-def float_as_string_constructor(loader, node) -> str:  # noqa: ANN001
-    return loader.construct_scalar(node)
+def float_as_string_constructor(loader: RoundTripConstructor, node: Node) -> str:
+    return cast("str", loader.construct_scalar(node))
 
 
 # _yaml_represent_str adapted from conda-smithy @ a52dcf7ab09ef9007702c5a89dc18f0735295036
@@ -23,19 +26,19 @@ def _yaml_represent_str(yaml_representer: SafeRepresenter, data: str) -> ScalarN
     # let's go back to booleans
     if data in {"true", "false"}:
         return SafeRepresenter.represent_bool(yaml_representer, data == "true")
-    return yaml_representer.represent_str(data)
+    return cast("ScalarNode", yaml_representer.represent_str(data))
 
 
 def _yaml_object() -> YAML:
     yaml = YAML(typ="rt")
 
-    class _CustomConstructor(yaml.Constructor):  # type: ignore[name-defined]
-        yaml_constructors: ClassVar[dict[type, Callable]] = {}
-        yaml_multi_constructors: ClassVar[dict[type, Callable]] = {}
+    class _CustomConstructor(yaml.Constructor):  # type: ignore[name-defined, misc]
+        yaml_constructors: ClassVar[dict[type, Callable[..., Any]]] = {}
+        yaml_multi_constructors: ClassVar[dict[type, Callable[..., Any]]] = {}
 
-    class _CustomRepresenter(yaml.Representer):  # type: ignore[name-defined]
-        yaml_representers: ClassVar[dict[type, Callable]] = {}
-        yaml_multi_representers: ClassVar[dict[type, Callable]] = {}
+    class _CustomRepresenter(yaml.Representer):  # type: ignore[name-defined, misc]
+        yaml_representers: ClassVar[dict[type, Callable[..., Any]]] = {}
+        yaml_multi_representers: ClassVar[dict[type, Callable[..., Any]]] = {}
 
     _CustomConstructor.yaml_constructors.update(yaml.Constructor.yaml_constructors)
     _CustomConstructor.yaml_multi_constructors.update(yaml.Constructor.yaml_multi_constructors)

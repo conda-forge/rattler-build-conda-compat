@@ -51,4 +51,6 @@ source = "vcs"
 version-file = "src/rattler_build_conda_compat/_version.py"
 
 [tool.mypy]
+strict = true
 allow_redefinition = true
+exclude = ["tests/"]
