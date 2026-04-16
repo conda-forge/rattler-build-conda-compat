@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from collections import OrderedDict
 import json
 from itertools import chain
@@ -10,7 +11,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from conda_build.metadata import (
     MetaData as CondaMetaData,
@@ -28,8 +29,42 @@ from conda_build.config import Config
 
 from rattler_build_conda_compat.jinja.jinja import render_recipe_with_context
 from rattler_build_conda_compat.loader import load_yaml, parse_recipe_config_file
+from rattler_build_conda_compat.outputs import flatten_staging_inheritance
 from rattler_build_conda_compat.utils import _get_recipe_metadata, find_recipe
 from rattler_build_conda_compat.yaml import _yaml_object
+
+
+@contextlib.contextmanager
+def _staging_flattened_recipe_dir(recipe_dir: str, meta_name: str) -> Iterator[str]:
+    """Yield a recipe directory path whose ``meta_name`` file has staging
+    inheritance flattened. If the recipe does not use staging outputs, yield
+    the original directory unchanged. Otherwise, build a mirror directory
+    that symlinks every sibling file/directory of ``meta_name`` and writes
+    the flattened recipe in place of ``meta_name``. This keeps variants files
+    and helper scripts reachable at their original relative paths while
+    handing rattler-build a recipe it can render without the experimental
+    staging feature.
+    """
+    source = Path(recipe_dir)
+    recipe_file = source / meta_name
+    if not recipe_file.is_file():
+        yield recipe_dir
+        return
+
+    raw_text = recipe_file.read_text(encoding="utf-8")
+    flattened = flatten_staging_inheritance(raw_text)
+    if flattened == raw_text:
+        yield recipe_dir
+        return
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        for entry in source.iterdir():
+            if entry.name == meta_name:
+                continue
+            os.symlink(entry, tmp_path / entry.name)
+        (tmp_path / meta_name).write_text(flattened, encoding="utf-8")
+        yield str(tmp_path)
 
 
 class MetaData(CondaMetaData):
@@ -70,7 +105,14 @@ class MetaData(CondaMetaData):
     def parse_recipe(self) -> dict[str, Any]:
         recipe_path: Path = Path(self.path) / self._meta_name
 
-        yaml_content = load_yaml(recipe_path.read_text(encoding="utf-8"))
+        # Staging outputs (experimental rattler-build feature) declare build,
+        # host, and source sections that inheriting outputs pull in via
+        # `inherit:`. rattler-build --render-only drops staging outputs and
+        # does not propagate those sections, so we flatten them here before
+        # anything downstream (variant matrix computation, linting, dep graph)
+        # sees the recipe.
+        raw_text = recipe_path.read_text(encoding="utf-8")
+        yaml_content = load_yaml(flatten_staging_inheritance(raw_text))
 
         return render_recipe_with_context(yaml_content)
 
@@ -137,33 +179,34 @@ class MetaData(CondaMetaData):
 
         yaml = _yaml_object()
         try:
-            with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8") as outfile:
-                with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8") as variants_file:
-                    # dump variants in our variants that will be used to generate recipe
-                    if variants:
-                        yaml.dump(variants, variants_file)
+            with _staging_flattened_recipe_dir(self.path, self._meta_name) as recipe_dir:
+                with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8") as outfile:
+                    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8") as variants_file:
+                        # dump variants in our variants that will be used to generate recipe
+                        if variants:
+                            yaml.dump(variants, variants_file)
 
-                    variants_path = variants_file.name
+                        variants_path = variants_file.name
 
-                    run_args = [
-                        "rattler-build",
-                        "build",
-                        "--render-only",
-                        "--recipe",
-                        self.path,
-                        "--target-platform",
-                        target_platform_and_arch,
-                        "--build-platform",
-                        build_platform_and_arch,
-                    ]
+                        run_args = [
+                            "rattler-build",
+                            "build",
+                            "--render-only",
+                            "--recipe",
+                            recipe_dir,
+                            "--target-platform",
+                            target_platform_and_arch,
+                            "--build-platform",
+                            build_platform_and_arch,
+                        ]
 
-                    if variants:
-                        run_args.extend(["-m", variants_path])
-                    subprocess.run(run_args, check=True, stdout=outfile, env=os.environ)
+                        if variants:
+                            run_args.extend(["-m", variants_path])
+                        subprocess.run(run_args, check=True, stdout=outfile, env=os.environ)
 
-                    outfile.seek(0)
-                    content = outfile.read()
-                    metadata = json.loads(content)
+                        outfile.seek(0)
+                        content = outfile.read()
+                        metadata = json.loads(content)
             return metadata if isinstance(metadata, list) else [metadata]
 
         except Exception as e:

@@ -45,6 +45,36 @@ def test_environ_is_passed_to_rattler_build(env_recipe, snapshot) -> None:
         os.environ.pop("TEST_SHOULD_BE_PASSED", None)
 
 
+def test_metadata_parse_recipe_flattens_staging(
+    feedstock_dir_with_recipe: Path, data_dir: Path
+) -> None:
+    """Staging outputs must be merged into inheriting outputs before smithy
+    or any other consumer inspects ``MetaData.meta``. rattler-build's
+    --render-only drops them, so the compat layer flattens them itself in
+    ``parse_recipe()``.
+    """
+    (feedstock_dir_with_recipe / "recipe" / "recipe.yaml").write_text(
+        (data_dir / "staging_outputs.yaml").read_text(),
+        encoding="utf8",
+    )
+
+    meta = MetaData(feedstock_dir_with_recipe).meta
+
+    names = []
+    for output in meta["outputs"]:
+        for key in ("package", "staging"):
+            section = output.get(key)
+            if isinstance(section, dict) and "name" in section:
+                names.append(section["name"])
+                break
+    assert names == ["libfoo"]
+
+    libfoo = meta["outputs"][0]
+    assert "inherit" not in libfoo
+    assert libfoo["requirements"]["build"]
+    assert "source" in libfoo
+
+
 def test_metadata_for_single_output(feedstock_dir_with_recipe: Path, rich_recipe: Path) -> None:
     (feedstock_dir_with_recipe / "recipe" / "recipe.yaml").write_text(
         rich_recipe.read_text(), encoding="utf8"

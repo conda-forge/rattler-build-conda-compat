@@ -1,0 +1,29 @@
+outputs:
+  - staging:
+      name: shared
+    requirements:
+      build:
+        - cxx_compiler_stub
+      host:
+        - cudnn 9.*
+        - mkl-devel
+        - python
+
+  - package:
+      name: libtorch
+    inherit: shared
+    requirements:
+      host:
+        - python
+      run:
+        - cudnn 9.*
+
+  - package:
+      name: pytorch
+    inherit:
+      from: shared
+      run_exports: false
+    requirements:
+      run:
+        - libtorch
+        - python
