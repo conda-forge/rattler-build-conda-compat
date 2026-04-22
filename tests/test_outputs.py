@@ -8,7 +8,7 @@ from rattler_build_conda_compat.outputs import (
     is_staging_output,
     iter_package_outputs,
 )
-from rattler_build_conda_compat.yaml import _yaml_object, _dump_yaml_to_string
+from rattler_build_conda_compat.yaml import _dump_yaml_to_string, _yaml_object
 
 DATA = Path(__file__).parent / "data"
 
