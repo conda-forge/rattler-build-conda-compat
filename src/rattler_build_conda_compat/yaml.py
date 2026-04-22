@@ -40,9 +40,6 @@ def _yaml_object() -> YAML:
         yaml_representers: ClassVar[dict[type, Callable[..., Any]]] = {}
         yaml_multi_representers: ClassVar[dict[type, Callable[..., Any]]] = {}
 
-        def ignore_aliases(self, data) -> bool:  # noqa: ANN001, ARG002
-            return True
-
     _CustomConstructor.yaml_constructors.update(yaml.Constructor.yaml_constructors)
     _CustomConstructor.yaml_multi_constructors.update(yaml.Constructor.yaml_multi_constructors)
 
