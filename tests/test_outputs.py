@@ -8,7 +8,7 @@ from rattler_build_conda_compat.outputs import (
     is_staging_output,
     iter_package_outputs,
 )
-from rattler_build_conda_compat.yaml import _yaml_object
+from rattler_build_conda_compat.yaml import _dump_yaml_to_string, _yaml_object
 
 DATA = Path(__file__).parent / "data"
 
@@ -66,6 +66,12 @@ def test_flatten_staging_inheritance_string_inherit() -> None:
     assert list(libfoo["requirements"]["run"]) == ["python"]
     # staging source was promoted to the inheriting output
     assert libfoo["source"][0]["url"] == "https://example.com/libfoo-${{ version }}.tar.gz"
+
+
+def test_flatten_staging_inheritance_no_anchors() -> None:
+    flattened = _load_flattened("staging_outputs_gdal.yaml")
+    new_yaml = _dump_yaml_to_string(flattened)
+    assert "id0" not in new_yaml
 
 
 def test_flatten_staging_inheritance_merges_host_and_dedups() -> None:

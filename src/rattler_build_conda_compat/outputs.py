@@ -51,7 +51,7 @@ def _merge_requirement_section(
     source: Mapping[str, Any],
     key: str,
 ) -> None:
-    source_values = source.get(key)
+    source_values = copy.deepcopy(source.get(key))
     if not source_values:
         return
     existing = target.get(key) or []

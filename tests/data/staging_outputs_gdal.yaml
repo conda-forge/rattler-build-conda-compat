@@ -1,0 +1,19 @@
+recipe:
+  name: libgdal-split
+  version: 3.21.3
+
+outputs:
+  - staging:
+      name: core-build
+    requirements:
+      build:
+        - if: win
+          then: ninja
+
+  - package:
+      name: libgdal-core
+    inherit: core-build
+
+  - package:
+      name: libgdal-arrow-parquet
+    inherit: core-build
