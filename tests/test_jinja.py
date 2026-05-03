@@ -11,11 +11,18 @@ from rattler_build_conda_compat.yaml import _dump_yaml_to_string
 test_data = Path(__file__).parent / "data"
 
 
+_DEFAULT_VARIANT = {
+    "target_platform": "linux-64",
+    "build_platform": "linux-64",
+    "mpi": "mpi",
+}
+
+
 def test_render_recipe_with_context(snapshot) -> None:
     recipe = Path("tests/data/mamba_recipe.yaml")
     recipe_yaml = load_yaml(recipe.read_text())
 
-    rendered = render_recipe_with_context(recipe_yaml)
+    rendered = render_recipe_with_context(recipe_yaml, _DEFAULT_VARIANT)
     into_yaml = _dump_yaml_to_string(rendered)
 
     assert into_yaml == snapshot
@@ -34,7 +41,7 @@ def test_context_rendering(snapshot) -> None:
 
     recipe_yaml = load_yaml(recipe.read_text())
 
-    rendered = render_recipe_with_context(recipe_yaml)
+    rendered = render_recipe_with_context(recipe_yaml, _DEFAULT_VARIANT)
     into_yaml = _dump_yaml_to_string(rendered)
 
     assert into_yaml == snapshot

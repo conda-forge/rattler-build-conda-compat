@@ -13,8 +13,8 @@
       }),
       'requirements': CommentedMap({
         'build': CommentedSeq([
-          'c_compiler_stub',
-          'cuda_compiler_stub',
+          "${{ compiler('c') }}",
+          "${{ compiler('cuda') }}",
         ]),
         'host': CommentedSeq([
           'python',

@@ -145,8 +145,12 @@ def update_version(file: Path, new_version: str, hash_: Hash | None) -> str:
 
     data["context"]["version"] = new_version
 
-    # set up the jinja context
-    env = jinja_env()
+    # set up the jinja context. We don't have a real variant matrix here
+    # (this runs as part of a version bump, before any build), so pass an
+    # empty variant_config — `target_platform` etc. fall back to linux-64
+    # inside `jinja_env`, and any variant-dependent context entries are
+    # tolerated by `load_recipe_context`.
+    env = jinja_env({})
     context = copy.deepcopy(data.get("context", {}))
     context_variables = load_recipe_context(context, env)
     # for r-recipes we add the default `cran_mirror` variable

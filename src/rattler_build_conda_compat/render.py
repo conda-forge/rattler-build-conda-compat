@@ -25,7 +25,7 @@ from conda_build.variants import (
 from conda_build.metadata import get_selectors, check_bad_chrs
 from conda_build.config import Config
 
-from rattler_build_conda_compat.jinja.jinja import render_recipe_with_context
+from rattler_build_conda_compat.jinja.jinja import resolve_recipe_metadata
 from rattler_build_conda_compat.loader import load_yaml, parse_recipe_config_file
 from rattler_build_conda_compat.utils import _get_recipe_metadata, find_recipe
 from rattler_build_conda_compat.yaml import _yaml_object
@@ -71,7 +71,12 @@ class MetaData(CondaMetaData):
 
         yaml_content = load_yaml(recipe_path.read_text(encoding="utf-8"))
 
-        return render_recipe_with_context(yaml_content)
+        # Variants are unknown at this point (rattler-build computes them
+        # during the actual render below), so we use the variant-free
+        # resolver. It only substitutes simple `${{ name }}`-style refs
+        # needed for `name()`/`version()`, and leaves any context entries
+        # that depend on variant variables untouched.
+        return resolve_recipe_metadata(yaml_content)
 
     def name(self) -> str:
         """
