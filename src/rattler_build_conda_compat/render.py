@@ -202,7 +202,10 @@ class MetaData(CondaMetaData):
 
                         if variants:
                             run_args.extend(["-m", variants_path])
-                        subprocess.run(run_args, check=True, stdout=outfile, env=os.environ)
+                        env = {}
+                        env.update(os.environ)
+                        env["RATTLER_BUILD_ENABLE_GITHUB_INTEGRATION"] = "false"
+                        subprocess.run(run_args, check=True, stdout=outfile, env=env)
 
                         outfile.seek(0)
                         content = outfile.read()
