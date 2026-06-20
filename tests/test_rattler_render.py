@@ -98,6 +98,23 @@ def test_metadata_for_multiple_output(feedstock_dir_with_recipe: Path, mamba_rec
     assert rattler_metadata.version() == "1.5.8"
 
 
+def test_metadata_name_with_variant_in_name(
+    feedstock_dir_with_recipe: Path, variant_name_recipe: Path
+) -> None:
+    # The unrendered recipe name depends on a build variant (``go_variant_str``)
+    # defined in conda_build_config.yaml, so it still contains an unevaluated Jinja
+    # expression. ``name()`` (used e.g. by ``conda-smithy init``) must not treat the
+    # ``$`` from that expression as a bad character.
+    (feedstock_dir_with_recipe / "recipe" / "recipe.yaml").write_text(
+        variant_name_recipe.read_text(), encoding="utf8"
+    )
+
+    rattler_metadata = MetaData(feedstock_dir_with_recipe)
+
+    assert rattler_metadata.name() == "go-${{ go_variant_str }}-compiler"
+    assert rattler_metadata.version() == "1.26.4"
+
+
 def test_metadata_when_rendering_single_output(
     feedstock_dir_with_recipe: Path, rich_recipe: Path
 ) -> None:

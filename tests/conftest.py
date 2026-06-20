@@ -88,6 +88,11 @@ def multiple_outputs() -> Path:
 
 
 @pytest.fixture
+def variant_name_recipe() -> Path:
+    return Path("tests/data/variant_name_recipe.yaml")
+
+
+@pytest.fixture
 def feedstock_dir_with_recipe(tmpdir: Path) -> Path:
     feedstock_dir = tmpdir / "feedstock"
 

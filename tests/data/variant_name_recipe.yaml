@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+
+context:
+  version: "1.26.4"
+
+package:
+  # The package name depends on the ``go_variant_str`` build variant, which is
+  # defined in conda_build_config.yaml and is therefore unknown until the recipe
+  # is rendered with variants.
+  name: go-${{ go_variant_str }}-compiler
+  version: ${{ version }}
+
+build:
+  number: 0
+
+requirements:
+  run:
+    - go-${{ go_variant_str }}_${{ target_platform }} ${{ version }}.*
+
+about:
+  homepage: https://go.dev/
+  license: BSD-3-Clause
+  summary: The Go compiler

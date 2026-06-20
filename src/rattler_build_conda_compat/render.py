@@ -8,6 +8,7 @@ import json
 from itertools import chain
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -65,6 +66,22 @@ def _staging_flattened_recipe_dir(recipe_dir: str, meta_name: str) -> Iterator[s
             os.symlink(entry, tmp_path / entry.name)
         (tmp_path / meta_name).write_text(flattened, encoding="utf-8")
         yield str(tmp_path)
+
+
+# Matches an unevaluated rattler-build Jinja expression, e.g. ``${{ go_variant_str }}``.
+_UNRENDERED_JINJA_EXPRESSION = re.compile(r"\$\{\{.*?\}\}")
+
+
+def _strip_unrendered_jinja(value: str) -> str:
+    """Remove unevaluated rattler-build Jinja expressions (``${{ ... }}``) from ``value``.
+
+    When a recipe has not been rendered, fields such as ``package/name`` may still
+    contain Jinja expressions if they depend on a build variant defined in
+    ``conda_build_config.yaml`` (e.g. ``go-${{ go_variant_str }}-compiler``). Those
+    expressions are not part of the literal value, so this strips them before the
+    value is validated for bad characters.
+    """
+    return _UNRENDERED_JINJA_EXPRESSION.sub("", value)
 
 
 class MetaData(CondaMetaData):
@@ -133,10 +150,17 @@ class MetaData(CondaMetaData):
         if not name:
             raise ValueError(f"Error: package/name missing in: {self.meta_path!r}")
 
-        if name != name.lower():
+        # When the recipe has not been rendered yet, the name may still contain
+        # unevaluated Jinja expressions if it depends on a build variant defined in
+        # conda_build_config.yaml (e.g. ``go-${{ go_variant_str }}-compiler``). Those
+        # expressions are not part of the package name, so validate only the literal
+        # portion that surrounds them.
+        name_to_check = name if self._rendered else _strip_unrendered_jinja(name)
+
+        if name_to_check != name_to_check.lower():
             raise ValueError(f"Error: package/name must be lowercase, got: {name!r}")
 
-        check_bad_chrs(name, "package/name")
+        check_bad_chrs(name_to_check, "package/name")
         return name
 
     def build_id(self) -> str:
