@@ -75,6 +75,24 @@ def test_metadata_parse_recipe_flattens_staging(
     assert "source" in libfoo
 
 
+def test_metadata_with_variant_dependent_context(
+    feedstock_dir_with_recipe: Path, data_dir: Path
+) -> None:
+    """Recipes like vc-feedstock compute context values from variant variables
+    (e.g. ``${{ (vcver | split(".")) [0] }}``). Those are only known once the
+    variant matrix exists, so parsing the recipe must not require them.
+    """
+    (feedstock_dir_with_recipe / "recipe" / "recipe.yaml").write_text(
+        (data_dir / "variant_context.yaml").read_text(),
+        encoding="utf8",
+    )
+
+    meta = MetaData(feedstock_dir_with_recipe)
+
+    assert meta.name() == "vc-feedstock"
+    assert meta.meta["context"]["vc_major"] == '${{ (vcver | split(".")) [0] }}'
+
+
 def test_metadata_for_single_output(feedstock_dir_with_recipe: Path, rich_recipe: Path) -> None:
     (feedstock_dir_with_recipe / "recipe" / "recipe.yaml").write_text(
         rich_recipe.read_text(), encoding="utf8"
