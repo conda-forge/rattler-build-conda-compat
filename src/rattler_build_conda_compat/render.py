@@ -4,12 +4,9 @@ from __future__ import annotations
 
 import contextlib
 from collections import OrderedDict
-import json
 from itertools import chain
 import os
 from pathlib import Path
-import subprocess
-import sys
 import tempfile
 from typing import Any, Dict, Iterator, List, Optional
 
@@ -26,6 +23,8 @@ from conda_build.variants import (
 )
 from conda_build.metadata import get_selectors, check_bad_chrs
 from conda_build.config import Config
+
+from rattler_build.render import render_recipes as rattler_build_render_recipes
 
 from rattler_build_conda_compat.jinja.jinja import render_recipe_with_context
 from rattler_build_conda_compat.loader import load_yaml, parse_recipe_config_file
@@ -178,42 +177,21 @@ class MetaData(CondaMetaData):
         target_platform_and_arch = f"{self.config.host_platform}-{self.config.host_arch}"
 
         yaml = _yaml_object()
-        try:
-            with _staging_flattened_recipe_dir(self.path, self._meta_name) as recipe_dir:
-                with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8") as outfile:
-                    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8") as variants_file:
-                        # dump variants in our variants that will be used to generate recipe
-                        if variants:
-                            yaml.dump(variants, variants_file)
+        with _staging_flattened_recipe_dir(self.path, self._meta_name) as recipe_dir:
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8") as variants_file:
+                # dump variants in our variants that will be used to generate recipe
+                variant_config_files = []
+                if variants:
+                    yaml.dump(variants, variants_file)
+                    variants_file.flush()
+                    variant_config_files.append(variants_file.name)
 
-                        variants_path = variants_file.name
-
-                        run_args = [
-                            "rattler-build",
-                            "build",
-                            "--render-only",
-                            "--recipe",
-                            recipe_dir,
-                            "--target-platform",
-                            target_platform_and_arch,
-                            "--build-platform",
-                            build_platform_and_arch,
-                        ]
-
-                        if variants:
-                            run_args.extend(["-m", variants_path])
-                        env = {}
-                        env.update(os.environ)
-                        env["RATTLER_BUILD_ENABLE_GITHUB_INTEGRATION"] = "false"
-                        subprocess.run(run_args, check=True, stdout=outfile, env=env)
-
-                        outfile.seek(0)
-                        content = outfile.read()
-                        metadata = json.loads(content)
-            return metadata if isinstance(metadata, list) else [metadata]
-
-        except Exception as e:
-            raise e
+                return rattler_build_render_recipes(
+                    [recipe_dir],
+                    target_platform=target_platform_and_arch,
+                    build_platform=build_platform_and_arch,
+                    variant_config=variant_config_files,
+                )
 
     def get_used_vars(self, force_top_level=False, force_global=False):
         if "build_configuration" not in self.meta:

@@ -2,14 +2,12 @@
 # name: test_context_rendering
   '''
   context:
-    name: "foo"
-    version: "bla"
+    name: foo
+    version: bla
     name_version: foo-bla
-  
   package:
     name: foo
     version: bla
-  
   build:
     string: ${{ blas_variant }}${{ hash }}_foo-bla
   
@@ -19,11 +17,9 @@
   '''
     - context:
         version: 5.1.0
-  
       package:
         name: jolt-physics
         version: 5.1.0
-  
       source:
         - url: https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.1.0.zip
           sha256: 10fcc863ae2b9d48c2f22d8b0204034820e57a55f858b7c388ac9579d8cf4095
@@ -31,7 +27,6 @@
           then:
             url: https://win.com/jolt-physics.zip
             sha256: 10fcc863ae2b9d48c2f22d8b0204034820e57a55f858b7c388ac9579d8cf4095
-  
       requirements:
         build:
           - cxx_compiler_stub
@@ -43,41 +38,15 @@
               - cuda-compiler
         host:
           - compatible_pin cmake
-          - subpackage_pin ${{ jolt_physics }}
-  
+          - subpackage_pin None
       build:
         number: 0
         script:
           - if: win
-            then: |
-              cmake -GNinja ^
-                  %CMAKE_ARGS% ^
-                  -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^
-                  -DBUILD_SHARED_LIBS=ON ^
-                  -DCMAKE_BUILD_TYPE=Distribution ^
-                  -DCROSS_PLATFORM_DETERMINISTIC=ON ^
-                  -DTARGET_VIEWER=OFF ^
-                  -DTARGET_SAMPLES=OFF ^
-                  -DTARGET_HELLO_WORLD=OFF ^
-                  -DTARGET_UNIT_TESTS=OFF ^
-                  -DTARGET_PERFORMANCE_TEST=OFF ^
-                  -S %SRC_DIR%\Build
-              cmake --build . --target install
-            else: |
-              cmake -GNinja \
-                  $CMAKE_ARGS \
-                  -DCMAKE_INSTALL_PREFIX=$PREFIX \
-                  -DBUILD_SHARED_LIBS=ON \
-                  -DCMAKE_BUILD_TYPE=Distribution \
-                  -DCROSS_PLATFORM_DETERMINISTIC=ON \
-                  -DTARGET_VIEWER=OFF \
-                  -DTARGET_SAMPLES=OFF \
-                  -DTARGET_HELLO_WORLD=OFF \
-                  -DTARGET_UNIT_TESTS=OFF \
-                  -DTARGET_PERFORMANCE_TEST=OFF \
-                  -S $SRC_DIR/Build
-              cmake --build . --target install
-  
+            then: "cmake -GNinja ^\n    %CMAKE_ARGS% ^\n    -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^\n    -DBUILD_SHARED_LIBS=ON ^\n    -DCMAKE_BUILD_TYPE=Distribution ^\n    -DCROSS_PLATFORM_DETERMINISTIC=ON ^\n    -DTARGET_VIEWER=OFF ^\n    -DTARGET_SAMPLES=OFF ^\n    -DTARGET_HELLO_WORLD=OFF ^\n    -DTARGET_UNIT_TESTS=OFF
+              ^\n    -DTARGET_PERFORMANCE_TEST=OFF ^\n    -S %SRC_DIR%\\Build\ncmake --build . --target install\n"
+            else: "cmake -GNinja \\\n    $CMAKE_ARGS \\\n    -DCMAKE_INSTALL_PREFIX=$PREFIX \\\n    -DBUILD_SHARED_LIBS=ON \\\n    -DCMAKE_BUILD_TYPE=Distribution \\\n    -DCROSS_PLATFORM_DETERMINISTIC=ON \\\n    -DTARGET_VIEWER=OFF \\\n    -DTARGET_SAMPLES=OFF \\\n    -DTARGET_HELLO_WORLD=OFF \\\n    -DTARGET_UNIT_TESTS=OFF
+              \\\n    -DTARGET_PERFORMANCE_TEST=OFF \\\n    -S $SRC_DIR/Build\ncmake --build . --target install\n"
       about:
         homepage: https://github.com/jrouwe/JoltPhysics
         license: MIT
@@ -86,17 +55,14 @@
         description: A multi core friendly rigid body physics and collision detection library. Written in C++. Suitable for games and VR applications. Used by Horizon Forbidden West.
         documentation: https://jrouwe.github.io/JoltPhysics/
         repository: https://github.com/jrouwe/JoltPhysics
-  
       extra:
         recipe-maintainers:
           - baszalmstra
     - context:
         version: 5.1.0
-  
       package:
         name: jolt-physics
         version: 5.1.0
-  
       source:
         - url: https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.1.0.zip
           sha256: 10fcc863ae2b9d48c2f22d8b0204034820e57a55f858b7c388ac9579d8cf4095
@@ -104,7 +70,6 @@
           then:
             url: https://win.com/jolt-physics.zip
             sha256: 10fcc863ae2b9d48c2f22d8b0204034820e57a55f858b7c388ac9579d8cf4095
-  
       requirements:
         build:
           - cxx_compiler_stub
@@ -116,41 +81,15 @@
               - cuda-compiler
         host:
           - compatible_pin cmake
-          - subpackage_pin ${{ jolt_physics }}
-  
+          - subpackage_pin None
       build:
         number: 0
         script:
           - if: win
-            then: |
-              cmake -GNinja ^
-                  %CMAKE_ARGS% ^
-                  -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^
-                  -DBUILD_SHARED_LIBS=ON ^
-                  -DCMAKE_BUILD_TYPE=Distribution ^
-                  -DCROSS_PLATFORM_DETERMINISTIC=ON ^
-                  -DTARGET_VIEWER=OFF ^
-                  -DTARGET_SAMPLES=OFF ^
-                  -DTARGET_HELLO_WORLD=OFF ^
-                  -DTARGET_UNIT_TESTS=OFF ^
-                  -DTARGET_PERFORMANCE_TEST=OFF ^
-                  -S %SRC_DIR%\Build
-              cmake --build . --target install
-            else: |
-              cmake -GNinja \
-                  $CMAKE_ARGS \
-                  -DCMAKE_INSTALL_PREFIX=$PREFIX \
-                  -DBUILD_SHARED_LIBS=ON \
-                  -DCMAKE_BUILD_TYPE=Distribution \
-                  -DCROSS_PLATFORM_DETERMINISTIC=ON \
-                  -DTARGET_VIEWER=OFF \
-                  -DTARGET_SAMPLES=OFF \
-                  -DTARGET_HELLO_WORLD=OFF \
-                  -DTARGET_UNIT_TESTS=OFF \
-                  -DTARGET_PERFORMANCE_TEST=OFF \
-                  -S $SRC_DIR/Build
-              cmake --build . --target install
-  
+            then: "cmake -GNinja ^\n    %CMAKE_ARGS% ^\n    -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^\n    -DBUILD_SHARED_LIBS=ON ^\n    -DCMAKE_BUILD_TYPE=Distribution ^\n    -DCROSS_PLATFORM_DETERMINISTIC=ON ^\n    -DTARGET_VIEWER=OFF ^\n    -DTARGET_SAMPLES=OFF ^\n    -DTARGET_HELLO_WORLD=OFF ^\n    -DTARGET_UNIT_TESTS=OFF
+              ^\n    -DTARGET_PERFORMANCE_TEST=OFF ^\n    -S %SRC_DIR%\\Build\ncmake --build . --target install\n"
+            else: "cmake -GNinja \\\n    $CMAKE_ARGS \\\n    -DCMAKE_INSTALL_PREFIX=$PREFIX \\\n    -DBUILD_SHARED_LIBS=ON \\\n    -DCMAKE_BUILD_TYPE=Distribution \\\n    -DCROSS_PLATFORM_DETERMINISTIC=ON \\\n    -DTARGET_VIEWER=OFF \\\n    -DTARGET_SAMPLES=OFF \\\n    -DTARGET_HELLO_WORLD=OFF \\\n    -DTARGET_UNIT_TESTS=OFF
+              \\\n    -DTARGET_PERFORMANCE_TEST=OFF \\\n    -S $SRC_DIR/Build\ncmake --build . --target install\n"
       about:
         homepage: https://github.com/jrouwe/JoltPhysics
         license: MIT
@@ -159,17 +98,14 @@
         description: A multi core friendly rigid body physics and collision detection library. Written in C++. Suitable for games and VR applications. Used by Horizon Forbidden West.
         documentation: https://jrouwe.github.io/JoltPhysics/
         repository: https://github.com/jrouwe/JoltPhysics
-  
       extra:
         recipe-maintainers:
           - baszalmstra
     - context:
         version: 5.1.0
-  
       package:
         name: jolt-physics
         version: 5.1.0
-  
       source:
         - url: https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.1.0.zip
           sha256: 10fcc863ae2b9d48c2f22d8b0204034820e57a55f858b7c388ac9579d8cf4095
@@ -177,7 +113,6 @@
           then:
             url: https://win.com/jolt-physics.zip
             sha256: 10fcc863ae2b9d48c2f22d8b0204034820e57a55f858b7c388ac9579d8cf4095
-  
       requirements:
         build:
           - cxx_compiler_stub
@@ -189,41 +124,15 @@
               - cuda-compiler
         host:
           - compatible_pin cmake
-          - subpackage_pin ${{ jolt_physics }}
-  
+          - subpackage_pin None
       build:
         number: 0
         script:
           - if: win
-            then: |
-              cmake -GNinja ^
-                  %CMAKE_ARGS% ^
-                  -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^
-                  -DBUILD_SHARED_LIBS=ON ^
-                  -DCMAKE_BUILD_TYPE=Distribution ^
-                  -DCROSS_PLATFORM_DETERMINISTIC=ON ^
-                  -DTARGET_VIEWER=OFF ^
-                  -DTARGET_SAMPLES=OFF ^
-                  -DTARGET_HELLO_WORLD=OFF ^
-                  -DTARGET_UNIT_TESTS=OFF ^
-                  -DTARGET_PERFORMANCE_TEST=OFF ^
-                  -S %SRC_DIR%\Build
-              cmake --build . --target install
-            else: |
-              cmake -GNinja \
-                  $CMAKE_ARGS \
-                  -DCMAKE_INSTALL_PREFIX=$PREFIX \
-                  -DBUILD_SHARED_LIBS=ON \
-                  -DCMAKE_BUILD_TYPE=Distribution \
-                  -DCROSS_PLATFORM_DETERMINISTIC=ON \
-                  -DTARGET_VIEWER=OFF \
-                  -DTARGET_SAMPLES=OFF \
-                  -DTARGET_HELLO_WORLD=OFF \
-                  -DTARGET_UNIT_TESTS=OFF \
-                  -DTARGET_PERFORMANCE_TEST=OFF \
-                  -S $SRC_DIR/Build
-              cmake --build . --target install
-  
+            then: "cmake -GNinja ^\n    %CMAKE_ARGS% ^\n    -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^\n    -DBUILD_SHARED_LIBS=ON ^\n    -DCMAKE_BUILD_TYPE=Distribution ^\n    -DCROSS_PLATFORM_DETERMINISTIC=ON ^\n    -DTARGET_VIEWER=OFF ^\n    -DTARGET_SAMPLES=OFF ^\n    -DTARGET_HELLO_WORLD=OFF ^\n    -DTARGET_UNIT_TESTS=OFF
+              ^\n    -DTARGET_PERFORMANCE_TEST=OFF ^\n    -S %SRC_DIR%\\Build\ncmake --build . --target install\n"
+            else: "cmake -GNinja \\\n    $CMAKE_ARGS \\\n    -DCMAKE_INSTALL_PREFIX=$PREFIX \\\n    -DBUILD_SHARED_LIBS=ON \\\n    -DCMAKE_BUILD_TYPE=Distribution \\\n    -DCROSS_PLATFORM_DETERMINISTIC=ON \\\n    -DTARGET_VIEWER=OFF \\\n    -DTARGET_SAMPLES=OFF \\\n    -DTARGET_HELLO_WORLD=OFF \\\n    -DTARGET_UNIT_TESTS=OFF
+              \\\n    -DTARGET_PERFORMANCE_TEST=OFF \\\n    -S $SRC_DIR/Build\ncmake --build . --target install\n"
       about:
         homepage: https://github.com/jrouwe/JoltPhysics
         license: MIT
@@ -232,17 +141,14 @@
         description: A multi core friendly rigid body physics and collision detection library. Written in C++. Suitable for games and VR applications. Used by Horizon Forbidden West.
         documentation: https://jrouwe.github.io/JoltPhysics/
         repository: https://github.com/jrouwe/JoltPhysics
-  
       extra:
         recipe-maintainers:
           - baszalmstra
     - context:
         version: 5.1.0
-  
       package:
         name: jolt-physics
         version: 5.1.0
-  
       source:
         - url: https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.1.0.zip
           sha256: 10fcc863ae2b9d48c2f22d8b0204034820e57a55f858b7c388ac9579d8cf4095
@@ -250,7 +156,6 @@
           then:
             url: https://win.com/jolt-physics.zip
             sha256: 10fcc863ae2b9d48c2f22d8b0204034820e57a55f858b7c388ac9579d8cf4095
-  
       requirements:
         build:
           - cxx_compiler_stub
@@ -262,41 +167,15 @@
               - cuda-compiler
         host:
           - compatible_pin cmake
-          - subpackage_pin ${{ jolt_physics }}
-  
+          - subpackage_pin None
       build:
         number: 0
         script:
           - if: win
-            then: |
-              cmake -GNinja ^
-                  %CMAKE_ARGS% ^
-                  -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^
-                  -DBUILD_SHARED_LIBS=ON ^
-                  -DCMAKE_BUILD_TYPE=Distribution ^
-                  -DCROSS_PLATFORM_DETERMINISTIC=ON ^
-                  -DTARGET_VIEWER=OFF ^
-                  -DTARGET_SAMPLES=OFF ^
-                  -DTARGET_HELLO_WORLD=OFF ^
-                  -DTARGET_UNIT_TESTS=OFF ^
-                  -DTARGET_PERFORMANCE_TEST=OFF ^
-                  -S %SRC_DIR%\Build
-              cmake --build . --target install
-            else: |
-              cmake -GNinja \
-                  $CMAKE_ARGS \
-                  -DCMAKE_INSTALL_PREFIX=$PREFIX \
-                  -DBUILD_SHARED_LIBS=ON \
-                  -DCMAKE_BUILD_TYPE=Distribution \
-                  -DCROSS_PLATFORM_DETERMINISTIC=ON \
-                  -DTARGET_VIEWER=OFF \
-                  -DTARGET_SAMPLES=OFF \
-                  -DTARGET_HELLO_WORLD=OFF \
-                  -DTARGET_UNIT_TESTS=OFF \
-                  -DTARGET_PERFORMANCE_TEST=OFF \
-                  -S $SRC_DIR/Build
-              cmake --build . --target install
-  
+            then: "cmake -GNinja ^\n    %CMAKE_ARGS% ^\n    -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^\n    -DBUILD_SHARED_LIBS=ON ^\n    -DCMAKE_BUILD_TYPE=Distribution ^\n    -DCROSS_PLATFORM_DETERMINISTIC=ON ^\n    -DTARGET_VIEWER=OFF ^\n    -DTARGET_SAMPLES=OFF ^\n    -DTARGET_HELLO_WORLD=OFF ^\n    -DTARGET_UNIT_TESTS=OFF
+              ^\n    -DTARGET_PERFORMANCE_TEST=OFF ^\n    -S %SRC_DIR%\\Build\ncmake --build . --target install\n"
+            else: "cmake -GNinja \\\n    $CMAKE_ARGS \\\n    -DCMAKE_INSTALL_PREFIX=$PREFIX \\\n    -DBUILD_SHARED_LIBS=ON \\\n    -DCMAKE_BUILD_TYPE=Distribution \\\n    -DCROSS_PLATFORM_DETERMINISTIC=ON \\\n    -DTARGET_VIEWER=OFF \\\n    -DTARGET_SAMPLES=OFF \\\n    -DTARGET_HELLO_WORLD=OFF \\\n    -DTARGET_UNIT_TESTS=OFF
+              \\\n    -DTARGET_PERFORMANCE_TEST=OFF \\\n    -S $SRC_DIR/Build\ncmake --build . --target install\n"
       about:
         homepage: https://github.com/jrouwe/JoltPhysics
         license: MIT
@@ -305,7 +184,6 @@
         description: A multi core friendly rigid body physics and collision detection library. Written in C++. Suitable for games and VR applications. Used by Horizon Forbidden West.
         documentation: https://jrouwe.github.io/JoltPhysics/
         repository: https://github.com/jrouwe/JoltPhysics
-  
       extra:
         recipe-maintainers:
           - baszalmstra
@@ -314,27 +192,21 @@
 # ---
 # name: test_render_recipe_with_context
   '''
-  # yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
-  
   context:
     name: mamba
-    libmamba_version: "1.5.8"
-    libmambapy_version: "1.5.8"
-    mamba_version: "1.5.8"
-    release: "2024.03.25"
+    libmamba_version: 1.5.8
+    libmambapy_version: 1.5.8
+    mamba_version: 1.5.8
+    release: 2024.03.25
     build_number: 2
-  
   recipe:
     name: mamba-split
     version: 1.5.8
-  
   source:
     url: https://github.com/mamba-org/mamba/archive/refs/tags/2024.03.25.tar.gz
     sha256: 6ddaf4b0758eb7ca1250f427bc40c2c3ede43257a60bac54e4320a4de66759a6
-  
   build:
     number: 2
-  
   outputs:
     - package:
         name: libmamba
@@ -366,10 +238,9 @@
         - script:
             - if: unix
               then:
-                - test -d ${PREFIX}/include/mamba # [unix]
+                - test -d ${PREFIX}/include/mamba
               else:
-                - if not exist %LIBRARY_PREFIX%\include\mamba\version.hpp (exit 1) # [win]
-  
+                - if not exist %LIBRARY_PREFIX%\include\mamba\version.hpp (exit 1)
     - package:
         name: libmambapy
         version: 1.5.8
@@ -377,7 +248,6 @@
         script:
           - build_mamba.sh
           - 
-        # string: py_suppython_version_to_build_stringh${{ hash }}_2
       requirements:
         build:
           - cxx_compiler_stub
@@ -408,7 +278,6 @@
               - libmambapy.bindings
         - script:
             - python -c "import libmambapy._version; assert libmambapy._version.__version__ == '1.5.8'"
-  
     - package:
         name: mamba
         version: 1.5.8
@@ -417,7 +286,7 @@
           - build_mamba.sh
           - 
           - 
-        string: pypython_version_to_build_stringh${{ hash }}_2
+        string: py${{ python | version_to_buildstring }}h${{ hash }}_2
         python:
           entry_points:
             - mamba = mamba.mamba:main
@@ -431,39 +300,28 @@
           - python
           - conda >=23.9,<24
           - subpackage_pin libmambapy
-  
       tests:
         - python:
             imports:
               - mamba
         - script:
             - mamba --help
-          # for some reason tqdm doesn't have a proper colorama dependency so pip check fails
-          # but that's completely unrelated to mamba
             - python -c "import mamba._version; assert mamba._version.__version__ == '1.5.8'"
-  
             - if: linux
               then:
                 - test -f ${PREFIX}/etc/profile.d/mamba.sh
-              # these tests work when run on win, but for some reason not during conda build
                 - mamba create -n test_py2 python=2.7 --dry-run
                 - mamba install xtensor xsimd -c conda-forge --dry-run
             - if: unix
               then:
                 - test -f ${PREFIX}/condabin/mamba
-  
   about:
     homepage: https://github.com/mamba-org/mamba
     license: BSD-3-Clause
     license_file: LICENSE
     license_family: BSD
     summary: A fast drop-in alternative to conda, using libsolv for dependency resolution
-    description: |
-      # Mamba, the Fast Cross-Platform Package Manager
-      env_"MY_ENV_VAR" 
-      env_"MY_ENV_VAR" 
-      env_exists_"MY_ENV_VAR" 
-  
+    description: "# Mamba, the Fast Cross-Platform Package Manager\n${{ env.get(\"MY_ENV_VAR\") }}\n${{ env.get(\"MY_ENV_VAR\", default=\"default_value\") }}\n${{ env.exists(\"MY_ENV_VAR\")}}\n"
     repository: https://github.com/mamba-org/mamba
   
   '''

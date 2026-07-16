@@ -2,135 +2,63 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypedDict
 
-import jinja2
-from jinja2.sandbox import SandboxedEnvironment
-from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
+from rattler_build.jinja_config import JinjaConfig
+from rattler_build.render import render_context
+from rattler_build.tool_config import PlatformConfig
 
-from rattler_build_conda_compat.jinja.filters import _bool, _split, _version_to_build_string
 from rattler_build_conda_compat.jinja.objects import (
     _stub_compatible_pin,
     _stub_match,
     _stub_subpackage_pin,
-    _StubEnv,
 )
-from rattler_build_conda_compat.jinja.utils import _MissingUndefined
 from rattler_build_conda_compat.loader import load_yaml
 from rattler_build_conda_compat.yaml import _dump_yaml_to_string
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
 
 
 class RecipeWithContext(TypedDict, total=False):
     context: dict[str, str]
 
 
-def jinja_env(variant_config: Mapping[str, str] | None = None) -> SandboxedEnvironment:
+DEFAULT_VARIANT_CONFIG: dict[str, str] = {
+    "target_platform": "linux-64",
+    "build_platform": "linux-64",
+    "mpi": "mpi",
+}
+
+
+def _stub_functions() -> dict[str, Callable[..., str]]:
     """
-    Create a `rattler-build` specific Jinja2 environment with modified syntax.
+    Stub implementations of rattler-build's build-phase helper functions.
+    They produce the placeholder strings conda-smithy's linter matches on
+    (e.g. ``c_compiler_stub``, ``subpackage_pin foo``) without requiring
+    build-time information.
+    """
+    return {
+        "compiler": lambda x: f"{x}_compiler_stub",
+        "stdlib": lambda x: f"{x}_stdlib_stub",
+        "pin_subpackage": _stub_subpackage_pin,
+        "pin_compatible": _stub_compatible_pin,
+        "cdt": lambda *args, **kwargs: "cdt_stub",  # noqa: ARG005
+        "match": _stub_match,
+    }
+
+
+def jinja_config(variant_config: Mapping[str, Any] | None = None) -> JinjaConfig:
+    """
+    Create a rattler-build Jinja configuration from a variant mapping.
     Target platform, build platform, and mpi are set to linux-64 by default.
     """
-
-    env = SandboxedEnvironment(
-        variable_start_string="${{",
-        variable_end_string="}}",
-        trim_blocks=True,
-        lstrip_blocks=True,
-        autoescape=jinja2.select_autoescape(default_for_string=False),
-        undefined=_MissingUndefined,
-    )
-
-    env_obj = _StubEnv()
-
-    # inject rattler-build recipe functions in jinja environment
     if not variant_config:
-        variant_config = {"target_platform": "linux-64", "build_platform": "linux-64", "mpi": "mpi"}
+        variant_config = DEFAULT_VARIANT_CONFIG
 
-    extra_vars = {}
-    target_platform = variant_config.get("target_platform", "linux-64")
-    if target_platform != "noarch":
-        # set `linux` / `win`
-        platform, arch = target_platform.split("-")
-        extra_vars[platform] = True
-        if arch == "64":
-            extra_vars["x86_64"] = True
-        elif arch == "32":
-            extra_vars["x86"] = True
-        else:
-            extra_vars[arch] = True
-
-    if target_platform.startswith("win"):
-        extra_vars["unix"] = False
-    else:
-        extra_vars["unix"] = True
-
-    env.globals.update(
-        {
-            "compiler": lambda x: x + "_compiler_stub",
-            "stdlib": lambda x: x + "_stdlib_stub",
-            "pin_subpackage": _stub_subpackage_pin,
-            "pin_compatible": _stub_compatible_pin,
-            "cdt": lambda *args, **kwargs: "cdt_stub",  # noqa: ARG005
-            "env": env_obj,
-            "match": _stub_match,
-            "is_unix": lambda x: not x.startswith("win"),
-            "is_win": lambda x: x.startswith("win"),
-            "is_linux": lambda x: x.startswith("linux"),
-            **extra_vars,
-            **variant_config,
-        }
+    platform = PlatformConfig(
+        target_platform=str(variant_config.get("target_platform", "linux-64")),
+        build_platform=str(variant_config.get("build_platform", "linux-64")),
     )
-
-    # inject rattler-build recipe filters in jinja environment
-    env.filters.update(
-        {
-            "version_to_buildstring": _version_to_build_string,
-            "split": _split,
-            "bool": _bool,
-        }
-    )
-    return env
-
-
-def load_recipe_context(context: dict[str, str], jinja_env: jinja2.Environment) -> dict[str, str]:
-    """
-    Load all string values from the context dictionary as Jinja2 templates.
-    Use linux-64 as default target_platform, build_platform, and mpi.
-    """
-
-    # Process each key-value pair in the dictionary
-    for key, value in context.items():
-        # If the value is a string, render it as a template
-        if isinstance(value, str):
-            template = jinja_env.from_string(value)
-            rendered_value = template.render(context)
-            # In this repo, rumael.yaml is configured to return strings as special subtypes
-            # depending on how the user specified them in the yaml. Two of the subtypes,
-            # SingleQuotedScalarString and DoubleQuotedScalarString, correspond to strings
-            # that are explicitly quoted in the yaml and thus are always string values in Python.
-            # We skip the yaml inference for those types since it does not need to be done and
-            # they are already strings. To properly do the yaml inference, we'd have
-            # to requote the strings before passing them in.
-            if type(value) in (SingleQuotedScalarString, DoubleQuotedScalarString):
-                context[key] = rendered_value
-            else:
-                # We have to escape sequences like \n, \t, etc. because they would be
-                # escaped if we wrote the rendered text to a yaml object. We don't directly
-                # dump via yaml since that will cause more type errors due to things still
-                # being strings (e.g., for an int 8 we have yaml.dump({"value": "8"}, fp)
-                # which yields "value: '8'\n" which would then be read as a string.).
-                # The sequence of calls `.encode("unicode_escape").decode("utf-8")`
-                # escapes the escape sequences and then converts back to a string
-                # from bytes, so we get "\n" -> "\\n". We then reverse the operations
-                # if the output type is a string.
-                _value = load_yaml(
-                    "value: " + rendered_value.encode("unicode_escape").decode("utf-8")
-                )["value"]
-                if isinstance(_value, str):
-                    _value = _value.encode("utf-8").decode("unicode_escape")
-                context[key] = _value
-
-    return context
+    return JinjaConfig(platform=platform, variant=dict(variant_config))
 
 
 def render_recipe_with_context(
@@ -138,8 +66,10 @@ def render_recipe_with_context(
 ) -> dict[str, Any]:
     """
     Render the recipe using known values from context section.
-    Unknown values are not evaluated and are kept as it is.
-    Target platform, build platform, and mpi are set to linux-64 by default.
+    Unknown values are not evaluated and are kept as they are.
+    Build-phase helper functions (``compiler``, ``pin_subpackage``, ...) render
+    to stub placeholders. Target platform, build platform, and mpi are set to
+    linux-64 by default.
 
     Examples:
     ---
@@ -152,14 +82,10 @@ def render_recipe_with_context(
     >>>
     ```
     """
-    env = jinja_env(variant_config)
-    context = recipe_content.get("context", {})
-    # render out the context section and retrieve dictionary
-    context_variables = load_recipe_context(context, env)
+    rendered = render_context(
+        dict(recipe_content), jinja_config(variant_config), functions=_stub_functions()
+    )
 
-    # render the rest of the document with the values from the context
-    # and keep undefined expressions _as is_.
-    template = env.from_string(_dump_yaml_to_string(recipe_content))
-    rendered_content = template.render(context_variables)
-
-    return load_yaml(rendered_content)  # type: ignore[no-any-return]
+    # dump and reload so the result consists of the same ruamel.yaml types that
+    # loading the rendered recipe from disk would produce
+    return load_yaml(_dump_yaml_to_string(rendered))  # type: ignore[no-any-return]

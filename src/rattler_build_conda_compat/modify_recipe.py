@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import hashlib
 import logging
 import re
@@ -8,7 +7,10 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import requests
 
-from rattler_build_conda_compat.jinja.jinja import jinja_env, load_recipe_context
+from rattler_build_conda_compat.jinja.jinja import (
+    DEFAULT_VARIANT_CONFIG,
+    render_recipe_with_context,
+)
 from rattler_build_conda_compat.recipe_sources import get_all_sources
 from rattler_build_conda_compat.yaml import _dump_yaml_to_string, _yaml_object
 
@@ -146,14 +148,17 @@ def update_version(file: Path, new_version: str, hash_: Hash | None) -> str:
 
     data["context"]["version"] = new_version
 
-    # set up the jinja context
-    env = jinja_env()
-    context = copy.deepcopy(data.get("context", {}))
-    context_variables = load_recipe_context(context, env)
+    # render the recipe with the new version substituted;
     # for r-recipes we add the default `cran_mirror` variable
-    context_variables["cran_mirror"] = "https://cran.r-project.org"
+    rendered = render_recipe_with_context(
+        data, {**DEFAULT_VARIANT_CONFIG, "cran_mirror": "https://cran.r-project.org"}
+    )
 
-    for source in get_all_sources(data):
+    # the rendered recipe preserves the raw recipe's structure, so the source
+    # dictionaries of both trees pair up
+    for source, rendered_source in zip(
+        get_all_sources(data), get_all_sources(rendered), strict=True
+    ):
         # render the whole URL and find the hash
         if "url" not in source:
             continue
@@ -165,8 +170,9 @@ def update_version(file: Path, new_version: str, hash_: Hash | None) -> str:
         if not _has_jinja_version(url):
             continue
 
-        template = env.from_string(url)
-        rendered_url = template.render(context_variables)
+        rendered_url = rendered_source["url"]
+        if isinstance(rendered_url, list):
+            rendered_url = rendered_url[0]
 
         update_hash(source, rendered_url, hash_)
 

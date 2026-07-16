@@ -6,8 +6,7 @@ from typing import Any, cast
 
 from rattler_build_conda_compat.jinja.jinja import (
     RecipeWithContext,
-    jinja_env,
-    load_recipe_context,
+    render_recipe_with_context,
 )
 from rattler_build_conda_compat.loader import _eval_selector
 from rattler_build_conda_compat.variant_config import variant_combinations
@@ -15,7 +14,7 @@ from rattler_build_conda_compat.variant_config import variant_combinations
 from .conditional_list import ConditionalList, visit_conditional_list
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator, MutableMapping
+    from collections.abc import Iterator, Mapping, MutableMapping
 
 
 OptionalUrlList = str | list[str] | None
@@ -102,7 +101,7 @@ def get_all_url_sources(recipe: MutableMapping[str, Any]) -> Iterator[str]:
 
 
 def _collect_source_sections(
-    recipe: RecipeWithContext,
+    recipe: Mapping[str, Any],
     selector: typing.Callable[[str], bool],
 ) -> list[Any]:
     """Collect raw source sections from top-level, cache, and outputs."""
@@ -130,7 +129,46 @@ def _collect_source_sections(
     return sections
 
 
-def render_all_sources(  # noqa: C901
+def _selector_namespace(variant_config: Mapping[str, Any]) -> dict[str, Any]:
+    """
+    Build the namespace used to evaluate `if:` selector expressions: platform
+    shortcuts (`linux`, `x86_64`, `unix`, ...) derived from the target platform
+    plus the variant variables themselves.
+    """
+    namespace: dict[str, Any] = {
+        "is_unix": lambda x: not x.startswith("win"),
+        "is_win": lambda x: x.startswith("win"),
+        "is_linux": lambda x: x.startswith("linux"),
+    }
+
+    target_platform = str(variant_config.get("target_platform", "linux-64"))
+    if target_platform != "noarch":
+        platform, arch = target_platform.split("-")
+        namespace[platform] = True
+        if arch == "64":
+            namespace["x86_64"] = True
+        elif arch == "32":
+            namespace["x86"] = True
+        else:
+            namespace[arch] = True
+
+    namespace["unix"] = not target_platform.startswith("win")
+    namespace.update(variant_config)
+    return namespace
+
+
+def _iter_source_dicts(
+    recipe: Mapping[str, Any],
+    selector: typing.Callable[[str], bool],
+) -> Iterator[dict[str, Any]]:
+    """Iterate over the source dictionaries selected by `selector`."""
+    for sources in _collect_source_sections(recipe, selector):
+        source_list = sources if isinstance(sources, list) else [sources]
+        for elem in visit_conditional_list(source_list, selector):
+            yield typing.cast("dict[str, Any]", elem)
+
+
+def render_all_sources(
     recipe: RecipeWithContext,
     variants: list[dict[str, list[str]]],
     override_version: str | None = None,
@@ -140,13 +178,6 @@ def render_all_sources(  # noqa: C901
     Variants can be loaded with the `variant_config.variant_combinations` module.
     Optionally, you can override the version in the recipe context to render URLs with a different version.
     """
-
-    def render(template: str | list[str], context: dict[str, str]) -> str | list[str]:
-        if isinstance(template, list):
-            return [cast("str", render(t, context)) for t in template]
-        template = env.from_string(template)
-        return template.render(context)
-
     if override_version is not None:
         recipe["context"]["version"] = override_version
 
@@ -154,41 +185,34 @@ def render_all_sources(  # noqa: C901
     for v in variants:
         combinations = variant_combinations(v)
         for combination in combinations:
-            env = jinja_env(combination)
-
-            context = recipe.get("context", {})
-            # render out the context section and retrieve dictionary
-            context_variables = load_recipe_context(context, env)
+            # substitute the context and variant variables into the whole recipe
+            rendered = render_recipe_with_context(recipe, combination)
+            context_variables = typing.cast("dict[str, str]", rendered.get("context", {}))
 
             # now evaluate the if / else statements
-            # collect source sections from all locations: top-level, cache, and outputs
-            selector = lambda x, combination=env.globals: _eval_selector(x, combination)  # noqa: E731
-            all_source_sections = _collect_source_sections(recipe, selector)
+            namespace = _selector_namespace(combination)
+            selector = lambda x, namespace=namespace: _eval_selector(x, namespace)  # noqa: E731
 
-            for sources in all_source_sections:
-                source_list = sources if isinstance(sources, list) else [sources]
-
-                for elem in visit_conditional_list(
-                    source_list,
-                    selector,
-                ):
-                    # we need to explicitly cast here
-                    elem_dict = typing.cast("dict[str, Any]", elem)
-                    sha256, md5 = None, None
-                    if elem_dict.get("sha256") is not None:
-                        sha256 = typing.cast(
-                            "str", render(str(elem_dict["sha256"]), context_variables)
-                        )
-                    if elem_dict.get("md5") is not None:
-                        md5 = typing.cast("str", render(str(elem_dict["md5"]), context_variables))
-                    if "url" in elem_dict:
-                        as_url = Source(
-                            url=render(elem_dict["url"], context_variables),
-                            template=elem_dict["url"],
-                            sha256=sha256,
-                            md5=md5,
-                            context=context_variables,
-                        )
-                        final_sources.add(as_url)
+            # the rendered recipe preserves the raw recipe's structure, so the
+            # source dictionaries of both trees pair up
+            for raw_elem, elem in zip(
+                _iter_source_dicts(recipe, selector),
+                _iter_source_dicts(rendered, selector),
+                strict=True,
+            ):
+                sha256, md5 = None, None
+                if elem.get("sha256") is not None:
+                    sha256 = str(elem["sha256"])
+                if elem.get("md5") is not None:
+                    md5 = str(elem["md5"])
+                if "url" in elem:
+                    as_url = Source(
+                        url=elem["url"],
+                        template=raw_elem["url"],
+                        sha256=sha256,
+                        md5=md5,
+                        context=context_variables,
+                    )
+                    final_sources.add(as_url)
 
     return final_sources

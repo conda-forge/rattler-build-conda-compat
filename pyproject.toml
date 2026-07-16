@@ -11,7 +11,9 @@ authors = [{ name = "Nichita Morcotilo", email = "nichita@prefix.dev" }]
 license = { file = "LICENSE.txt" }
 dependencies = [
     "typing-extensions>=4.12,<5",
-    "jinja2>=3.0.2,<4",
+    # TODO: bump the lower bound to the first release that ships
+    # `render_context` functions support and `render_recipes`
+    "py-rattler-build>=0.69.1",
     "tomli>=2.0.1,<3",
     "ruamel.yaml>=0.18.6,<0.19",
 ]

@@ -3,13 +3,9 @@ from __future__ import annotations
 import textwrap
 from pathlib import Path
 
-from rattler_build_conda_compat.jinja.filters import _version_to_build_string
 from rattler_build_conda_compat.jinja.jinja import (
-    jinja_env,
-    load_recipe_context,
     render_recipe_with_context,
 )
-from rattler_build_conda_compat.jinja.utils import _MissingUndefined
 from rattler_build_conda_compat.loader import load_yaml
 from rattler_build_conda_compat.yaml import _dump_yaml_to_string, _yaml_object
 
@@ -24,14 +20,6 @@ def test_render_recipe_with_context(snapshot) -> None:
     into_yaml = _dump_yaml_to_string(rendered)
 
     assert into_yaml == snapshot
-
-
-def test_version_to_build_string() -> None:
-    assert _version_to_build_string("1.2.3") == "12"
-    assert _version_to_build_string("1.2") == "12"
-    assert _version_to_build_string("nothing") == "nothing"
-    some_undefined = _MissingUndefined(name="python")
-    assert _version_to_build_string(some_undefined) == "python_version_to_build_string"
 
 
 def test_context_rendering(snapshot) -> None:
@@ -61,7 +49,37 @@ def test_context_rendering(snapshot) -> None:
     assert into_yaml == snapshot
 
 
-def test_load_recipe_context() -> None:
+def test_render_recipe_with_context_variant_dependent_entries() -> None:
+    """Recipes like vc-feedstock compute context values from variant variables
+    (e.g. ``${{ (vcver | split(".")) [0] }}``) that are only known once a
+    variant config exists. Rendering must keep those templates verbatim.
+    """
+    recipe_yaml = load_yaml((test_data / "variant_context.yaml").read_text())
+
+    rendered = render_recipe_with_context(recipe_yaml)
+
+    context = rendered["context"]
+    assert context["runtime_year"] == "2015"
+    assert context["build_num"] == 34
+    # entries that operate on variant variables cannot be evaluated without a
+    # variant config and keep their original template string
+    assert context["vc_major"] == '${{ (vcver | split(".")) [0] }}'
+    assert context["vcvars_ver_maj"] == '${{ ((cl_version | split(".")) [0] | int) - 5 }}'
+    # references to unresolved entries stay verbatim as well
+    assert context["vcvars_ver"] == "${{ vcvars_ver_maj }}.${{ vcvars_ver_min }}"
+
+    assert rendered["recipe"]["name"] == "vc-feedstock"
+    # version depends on a variant variable and stays a template
+    assert rendered["recipe"]["version"] == "${{ runtime_version }}"
+    outputs = rendered["outputs"]
+    # vc_major is variant-dependent, so the name stays a template
+    assert outputs[0]["package"]["name"] == "vcomp${{ vc_major }}"
+    # runtime_year is a plain context value and resolves
+    assert outputs[1]["package"]["name"] == "vs2015_runtime"
+    assert rendered["build"]["number"] == 34
+
+
+def test_render_recipe_with_context_context_section() -> None:
     context_str = textwrap.dedent(
         r"""
         context:
@@ -113,28 +131,31 @@ def test_load_recipe_context() -> None:
 
         """
     )
-    context = _yaml_object().load(context_str)["context"]
+    recipe = _yaml_object().load(context_str)
 
-    loaded_context = load_recipe_context(context, jinja_env())
-    assert loaded_context == {
+    rendered_context = render_recipe_with_context(recipe)["context"]
+    assert rendered_context == {
         "version": "0.2025.39",
         "name": "stackvana-core",
         "dm_tag": "w_2025_39",
         "non_weekly_dm_tag": "v0_2025_39",
         "patch_version": "_39",
-        "raw_major_version": "0",
-        "raw_minor_version": "2025",
-        "raw_patch_version": "39",
+        # fully resolved scalars are re-typed the way YAML would read them back
+        "raw_major_version": 0,
+        "raw_minor_version": 2025,
+        "raw_patch_version": 39,
         "weekly_dm_tag": "w_2025_39",
         "raw_minor_version_ml": 2025,
         "raw_minor_version_int": 2025,
-        "big_folded_string": "A big string on a lot of lines",
-        "big_pipe_string": "A big string\non a lot of lines",
+        # untemplated strings pass through untouched, so block scalars keep
+        # their trailing newlines
+        "big_folded_string": "A big string on a lot of lines\n",
+        "big_pipe_string": "A big string\non a lot of lines\n",
         "big_dq_flow_string": "A big string\non a \"lot\" 'of' lines",
         "big_flow_string": "A big string\non a lot of lines",
         "big_sq_flow_string": "A big string\non a \"lot\" 'of' lines",
         "big_pipe_string_minus": "A big string\non a lot of lines",
-        "big_pipe_string_plus": "A big string\non a lot of lines\n\n",
+        "big_pipe_string_plus": "A big string\non a lot of lines\n\n\n",
         "big_folded_string_minus": "A big string on a lot of lines",
-        "big_folded_string_plus": "A big string on a lot of lines\n\n",
+        "big_folded_string_plus": "A big string on a lot of lines\n\n\n",
     }
