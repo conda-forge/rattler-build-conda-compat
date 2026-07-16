@@ -1,6 +1,12 @@
 from pathlib import Path
 
-from rattler_build_conda_compat.modify_recipe import update_build_number, update_version
+import pytest
+
+from rattler_build_conda_compat.modify_recipe import (
+    CouldNotUpdateVersionError,
+    update_build_number,
+    update_version,
+)
 
 
 def test_build_number_mod(data_dir: Path) -> None:
@@ -31,6 +37,29 @@ def test_version_mod(data_dir: Path) -> None:
     result = update_version(test_cran, "1.1-30", None)
     expected = test_cran.parent / "expected.yaml"
     assert result == expected.read_text()
+
+
+def test_version_mod_aborts_on_unresolved_url(tmp_path: Path) -> None:
+    """A source URL that still holds an unresolved expression after rendering
+    must abort the bump rather than get downloaded: hashing an error page would
+    write a plausible-looking but wrong sha256 into the feedstock.
+    """
+    recipe = tmp_path / "recipe.yaml"
+    recipe.write_text(
+        """
+context:
+  version: "1.0"
+package:
+  name: test
+  version: ${{ version }}
+source:
+  url: https://foo.com/${{ name_var }}-${{ version }}.tar.gz
+  sha256: 0000000000000000000000000000000000000000000000000000000000000000
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(CouldNotUpdateVersionError, match="Could not fully render the source URL"):
+        update_version(recipe, "2.0", None)
 
 
 def test_multi_source(data_dir: Path) -> None:

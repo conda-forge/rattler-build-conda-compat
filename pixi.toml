@@ -14,6 +14,9 @@ version = "1.4.11"
 [package.build]
 backend = { name = "pixi-build-python", version = "*" }
 
+[package.run-dependencies]
+py-rattler-build = { path = "../rattler-build/py-rattler-build" }
+
 [package.build.config]
 ignore-pypi-mapping = false
 
@@ -24,9 +27,6 @@ build_sdist = "pixi run python -m build --sdist"
 rattler-build-conda-compat = { path = "." }
 python = ">=3.10"
 python-build = ">=1.3.0,<2"
-# TODO: switch to a released version once the `render_context` functions and
-# `render_recipes` additions land in a rattler-build release
-py-rattler-build = { git = "https://github.com/prefix-dev/rattler-build", branch = "lenient-render-context", subdirectory = "py-rattler-build" }
 conda-build = ">=25,<26"
 conda = ">=25,<26"
 pygithub = ">=2.8.1,<3"

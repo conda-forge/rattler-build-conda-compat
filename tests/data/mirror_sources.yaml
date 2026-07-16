@@ -1,0 +1,12 @@
+context:
+  version: "2.0"
+
+package:
+  name: mirrored
+  version: ${{ version }}
+
+source:
+  - url:
+      - https://mirror1.com/pkg-${{ version }}.tar.gz
+      - https://mirror2.com/pkg-${{ version }}.tar.gz
+    sha256: fa96331edf06dd2342cb27771367516296067e94961ec6e600add1c2eed9c41d

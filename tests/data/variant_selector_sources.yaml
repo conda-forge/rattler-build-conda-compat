@@ -1,0 +1,15 @@
+context:
+  version: "1.0"
+
+package:
+  name: blas-consumer
+  version: ${{ version }}
+
+source:
+  - if: blas_impl == "mkl"
+    then:
+      url: https://foo.com/mkl-${{ version }}.tar.gz
+      sha256: 94dc699df262187b3afe4f163526aac67fb5982b008efe851836e9f1cd5358c1
+    else:
+      url: https://foo.com/openblas-${{ version }}.tar.gz
+      sha256: eb1a9aa834a969a8ccbbb04061274623659a1fb273abda4413b47fe59e7ee412

@@ -68,6 +68,51 @@ def test_outputs_only_source_render(snapshot) -> None:
     assert sources == snapshot
 
 
+def test_cache_source_render() -> None:
+    """Sources in the `cache:` section render alongside output sources."""
+    recipe_yaml = load_yaml((test_data / "cache_sources.yaml").read_text())
+
+    sources = render_all_sources(recipe_yaml, [{}])
+
+    urls = sorted(str(source.url) for source in sources)
+    assert urls == [
+        "https://cache.com/foo-1.2.3.tar.gz",
+        "https://outputs.com/foo-core-1.2.3.zip",
+    ]
+
+
+def test_list_url_source_render() -> None:
+    """A source with a list of mirror URLs renders every entry and keeps the raw templates."""
+    recipe_yaml = load_yaml((test_data / "mirror_sources.yaml").read_text())
+
+    sources = render_all_sources(recipe_yaml, [{}])
+
+    assert len(sources) == 1
+    source = next(iter(sources))
+    assert source.url == [
+        "https://mirror1.com/pkg-2.0.tar.gz",
+        "https://mirror2.com/pkg-2.0.tar.gz",
+    ]
+    assert source.template == [
+        "https://mirror1.com/pkg-${{ version }}.tar.gz",
+        "https://mirror2.com/pkg-${{ version }}.tar.gz",
+    ]
+
+
+def test_variant_value_selector_render() -> None:
+    """`if:` selectors comparing variant variable values pick the matching branch per combination."""
+    recipe_yaml = load_yaml((test_data / "variant_selector_sources.yaml").read_text())
+    variants: list[dict[str, list[str]]] = [{"blas_impl": ["mkl", "openblas"]}]
+
+    sources = render_all_sources(recipe_yaml, variants)
+
+    urls = sorted(str(source.url) for source in sources)
+    assert urls == [
+        "https://foo.com/mkl-1.0.tar.gz",
+        "https://foo.com/openblas-1.0.tar.gz",
+    ]
+
+
 def test_variant_variables_source_render(snapshot) -> None:
     polars = test_data / "polars" / "sources.yaml"
     variants = (test_data / "polars" / "ci_support").glob("*.yaml")

@@ -140,10 +140,11 @@ def test_render_recipe_with_context_context_section() -> None:
         "dm_tag": "w_2025_39",
         "non_weekly_dm_tag": "v0_2025_39",
         "patch_version": "_39",
-        # fully resolved scalars are re-typed the way YAML would read them back
-        "raw_major_version": 0,
-        "raw_minor_version": 2025,
-        "raw_patch_version": 39,
+        # explicitly quoted source scalars stay strings, only unquoted ones
+        # are re-typed the way YAML would read them back
+        "raw_major_version": "0",
+        "raw_minor_version": "2025",
+        "raw_patch_version": "39",
         "weekly_dm_tag": "w_2025_39",
         "raw_minor_version_ml": 2025,
         "raw_minor_version_int": 2025,

@@ -1,0 +1,22 @@
+context:
+  name: foo
+  version: "1.2.3"
+
+package:
+  name: ${{ name }}
+  version: ${{ version }}
+
+cache:
+  source:
+    - url: https://cache.com/${{ name }}-${{ version }}.tar.gz
+      sha256: 94dc699df262187b3afe4f163526aac67fb5982b008efe851836e9f1cd5358c1
+  requirements:
+    build:
+      - cmake
+
+outputs:
+  - package:
+      name: ${{ name }}-core
+    source:
+      - url: https://outputs.com/${{ name }}-core-${{ version }}.zip
+        sha256: eb1a9aa834a969a8ccbbb04061274623659a1fb273abda4413b47fe59e7ee412

@@ -72,6 +72,7 @@ def update_build_number(file: Path, new_build_number: int = 0) -> str:
 class CouldNotUpdateVersionError(Exception):
     NO_CONTEXT = "Could not find context in recipe"
     NO_VERSION = "Could not find version in recipe context"
+    UNRENDERED_URL = "Could not fully render the source URL"
 
     def __init__(self, message: str = "Could not update version") -> None:
         self.message = message
@@ -173,6 +174,12 @@ def update_version(file: Path, new_version: str, hash_: Hash | None) -> str:
         rendered_url = rendered_source["url"]
         if isinstance(rendered_url, list):
             rendered_url = rendered_url[0]
+
+        # an expression the renderer could not resolve is kept verbatim; downloading
+        # such a URL would hash an error page and write a plausible-looking sha256
+        if "${{" in str(rendered_url):
+            message = f"{CouldNotUpdateVersionError.UNRENDERED_URL}: {rendered_url}"
+            raise CouldNotUpdateVersionError(message)
 
         update_hash(source, rendered_url, hash_)
 
