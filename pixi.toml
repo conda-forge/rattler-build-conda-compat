@@ -15,7 +15,7 @@ version = "1.4.11"
 backend = { name = "pixi-build-python", version = "*" }
 
 [package.run-dependencies]
-py-rattler-build = { path = "../rattler-build/py-rattler-build" }
+py-rattler-build = ">=0.70.0"
 
 [package.build.config]
 ignore-pypi-mapping = false
