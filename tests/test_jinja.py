@@ -8,6 +8,7 @@ from rattler_build_conda_compat.jinja.jinja import (
     jinja_env,
     load_recipe_context,
     render_recipe_with_context,
+    resolve_recipe_metadata,
 )
 from rattler_build_conda_compat.jinja.utils import _MissingUndefined
 from rattler_build_conda_compat.loader import load_yaml
@@ -59,6 +60,44 @@ def test_context_rendering(snapshot) -> None:
     into_yaml = _dump_yaml_to_string(rendered)
 
     assert into_yaml == snapshot
+
+
+def test_load_recipe_context_keeps_variant_dependent_entries() -> None:
+    recipe_yaml = load_yaml((test_data / "variant_context.yaml").read_text())
+    context = recipe_yaml["context"]
+
+    loaded_context = load_recipe_context(context, jinja_env())
+
+    assert loaded_context["runtime_year"] == "2015"
+    assert loaded_context["build_num"] == 34
+    # entries that operate on variant variables cannot be evaluated without a
+    # variant config and keep their original template string
+    assert loaded_context["vc_major"] == '${{ (vcver | split(".")) [0] }}'
+    assert loaded_context["vcvars_ver_maj"] == '${{ ((cl_version | split(".")) [0] | int) - 5 }}'
+
+
+def test_resolve_recipe_metadata_with_variant_dependent_context() -> None:
+    recipe_yaml = load_yaml((test_data / "variant_context.yaml").read_text())
+
+    resolved = resolve_recipe_metadata(recipe_yaml)
+
+    assert resolved["recipe"]["name"] == "vc-feedstock"
+    # version depends on a variant variable and stays a template
+    assert resolved["recipe"]["version"] == "${{ runtime_version }}"
+    outputs = resolved["outputs"]
+    # vc_major is variant-dependent, so the name stays a template
+    assert outputs[0]["package"]["name"] == "vcomp${{ vc_major }}"
+    # runtime_year is a plain context value and resolves
+    assert outputs[1]["package"]["name"] == "vs2015_runtime"
+
+
+def test_resolve_recipe_metadata_single_output() -> None:
+    recipe_yaml = load_yaml((test_data / "context.yaml").read_text())
+
+    resolved = resolve_recipe_metadata(recipe_yaml)
+
+    assert resolved["package"]["name"] == "foo"
+    assert resolved["package"]["version"] == "bla"
 
 
 def test_load_recipe_context() -> None:

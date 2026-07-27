@@ -27,7 +27,7 @@ from conda_build.variants import (
 from conda_build.metadata import get_selectors, check_bad_chrs
 from conda_build.config import Config
 
-from rattler_build_conda_compat.jinja.jinja import render_recipe_with_context
+from rattler_build_conda_compat.jinja.jinja import resolve_recipe_metadata
 from rattler_build_conda_compat.loader import load_yaml, parse_recipe_config_file
 from rattler_build_conda_compat.outputs import flatten_staging_inheritance
 from rattler_build_conda_compat.utils import _get_recipe_metadata, find_recipe
@@ -114,7 +114,11 @@ class MetaData(CondaMetaData):
         raw_text = recipe_path.read_text(encoding="utf-8")
         yaml_content = load_yaml(flatten_staging_inheritance(raw_text))
 
-        return render_recipe_with_context(yaml_content)
+        # No variant matrix exists yet at this point (rattler-build computes
+        # it during render_recipes), so only the surface metadata is resolved
+        # here. Context entries that depend on variant variables stay as
+        # template strings.
+        return resolve_recipe_metadata(yaml_content)
 
     def name(self) -> str:
         """

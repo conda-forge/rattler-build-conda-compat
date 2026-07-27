@@ -1,0 +1,31 @@
+# Trimmed-down version of the conda-forge vc-feedstock v1 recipe. The context
+# section computes values from variant variables (vcver, cl_version,
+# runtime_version) that are only defined in the variant config at build time.
+schema_version: 1
+
+context:
+  runtime_year: "2015"
+  vc_major: ${{ (vcver | split(".")) [0] }}
+  vcvars_ver_maj: ${{ ((cl_version | split(".")) [0] | int) - 5 }}
+  vcvars_ver_min: ${{ (cl_version | split(".")) [1] | int }}
+  vcvars_ver: ${{ vcvars_ver_maj }}.${{ vcvars_ver_min }}
+  build_num: 34
+
+recipe:
+  name: vc-feedstock
+  version: ${{ runtime_version }}
+
+build:
+  number: ${{ build_num }}
+  skip: not win
+
+outputs:
+  - package:
+      name: vcomp${{ vc_major }}
+      version: ${{ runtime_version }}
+    build:
+      number: ${{ build_num }}
+
+  - package:
+      name: vs${{ runtime_year }}_runtime
+      version: ${{ runtime_version }}

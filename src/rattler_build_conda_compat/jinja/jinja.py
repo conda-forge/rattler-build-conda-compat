@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, TypedDict
 
 import jinja2
+from jinja2 import UndefinedError
 from jinja2.sandbox import SandboxedEnvironment
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
 
@@ -92,18 +93,35 @@ def jinja_env(variant_config: Mapping[str, str] | None = None) -> SandboxedEnvir
     return env
 
 
+def _try_render(env: jinja2.Environment, template: str, context: Mapping[str, Any]) -> str | None:
+    """
+    Render a template string against the given context. Returns None when the
+    template performs operations (filters, indexing, attribute access) on
+    variables that are not defined, e.g. variant variables that are only known
+    once a variant config exists.
+    """
+    try:
+        rendered = env.from_string(template).render(context)
+    except UndefinedError:
+        return None
+    return rendered
+
+
 def load_recipe_context(context: dict[str, str], jinja_env: jinja2.Environment) -> dict[str, str]:
     """
     Load all string values from the context dictionary as Jinja2 templates.
     Use linux-64 as default target_platform, build_platform, and mpi.
+    Entries that cannot be evaluated because they operate on undefined
+    variables (e.g. variant variables) keep their original template string.
     """
 
     # Process each key-value pair in the dictionary
     for key, value in context.items():
         # If the value is a string, render it as a template
         if isinstance(value, str):
-            template = jinja_env.from_string(value)
-            rendered_value = template.render(context)
+            rendered_value = _try_render(jinja_env, value, context)
+            if rendered_value is None:
+                continue
             # In this repo, rumael.yaml is configured to return strings as special subtypes
             # depending on how the user specified them in the yaml. Two of the subtypes,
             # SingleQuotedScalarString and DoubleQuotedScalarString, correspond to strings
@@ -131,6 +149,75 @@ def load_recipe_context(context: dict[str, str], jinja_env: jinja2.Environment) 
                 context[key] = _value
 
     return context
+
+
+def _render_resolvable_fields(
+    section: Mapping[str, Any],
+    fields: tuple[str, ...],
+    env: jinja2.Environment,
+    context: Mapping[str, Any],
+) -> dict[str, Any]:
+    """
+    Return a copy of `section` with the given string fields rendered against
+    `context`. Fields that cannot be fully resolved (their rendered value
+    still contains a template expression) keep their original value.
+    """
+    resolved = dict(section)
+    for field in fields:
+        value = resolved.get(field)
+        if not isinstance(value, str):
+            continue
+        rendered = _try_render(env, value, context)
+        if rendered is not None and "${{" not in rendered:
+            resolved[field] = rendered
+    return resolved
+
+
+def resolve_recipe_metadata(recipe_content: RecipeWithContext) -> dict[str, Any]:
+    """
+    Resolve the surface metadata of a recipe (package/recipe name and version,
+    output package names) against its context section, without rendering the
+    recipe body. Fields and context entries that depend on variant variables
+    (e.g. ``${{ (vcver | split(".")) [0] }}``) keep their template string, so
+    this works without a variant config.
+
+    To render the whole recipe, use `render_recipe_with_context` with a
+    variant config instead.
+    """
+    env = jinja_env()
+    context = load_recipe_context(dict(recipe_content.get("context", {})), env)
+
+    resolved: dict[str, Any] = dict(recipe_content)
+    if "context" in resolved:
+        resolved["context"] = context
+
+    for section_key in ("package", "recipe"):
+        section = resolved.get(section_key)
+        if isinstance(section, dict):
+            resolved[section_key] = _render_resolvable_fields(
+                section, ("name", "version"), env, context
+            )
+
+    outputs = resolved.get("outputs")
+    if isinstance(outputs, list):
+        resolved_outputs = []
+        for output in outputs:
+            if not isinstance(output, dict):
+                resolved_outputs.append(output)
+                continue
+            resolved_output = dict(output)
+            for section_key in ("package", "staging"):
+                section = resolved_output.get(section_key)
+                if isinstance(section, dict):
+                    resolved_output[section_key] = _render_resolvable_fields(
+                        section, ("name", "version"), env, context
+                    )
+            resolved_outputs.append(resolved_output)
+        resolved["outputs"] = resolved_outputs
+
+    # dump and reload so the result consists of the same ruamel.yaml types
+    # with the same scalar type inference as a fully rendered recipe
+    return load_yaml(_dump_yaml_to_string(resolved))  # type: ignore[no-any-return]
 
 
 def render_recipe_with_context(
