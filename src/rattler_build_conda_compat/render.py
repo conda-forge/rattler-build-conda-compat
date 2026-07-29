@@ -445,11 +445,16 @@ def _reduce_variants(m: MetaData, variants: list[dict] | None) -> tuple[dict, di
     # track the used variables
     all_used_vars = set()
     all_used_vars.update(m.get_used_vars())
-    # keep zip_keys and everything zipped
-    # since the zipping happens, even on unused keys
-    all_used_vars.add("zip_keys")
-    all_zip_keys = set(chain(*variants.get("zip_keys", [])))
-    all_used_vars.update(all_zip_keys)
+    # keep zip_keys when at least one of the keys are used
+    # remove when none of the keys in the list are used
+    all_zip_keys = variants.get("zip_keys", [])
+    used_zip_keys = []
+    for zip_key_list in all_zip_keys:
+        for zip_key in zip_key_list:
+            if zip_key in all_used_vars:
+                all_used_vars.update(zip_key_list)
+                used_zip_keys.append(zip_key_list)
+                break
 
     # compute reduced variant dict,
     # only containing used keys
@@ -470,6 +475,8 @@ def _reduce_variants(m: MetaData, variants: list[dict] | None) -> tuple[dict, di
                 unused_value = unused_value[0]
 
             unused_variants[key] = unused_value
+    if all_zip_keys != used_zip_keys:
+        unused_variants["zip_keys"] = all_zip_keys
     return reduced_variants, unused_variants
 
 
