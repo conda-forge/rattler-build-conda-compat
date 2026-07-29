@@ -281,13 +281,10 @@ class MetaData(CondaMetaData):
         return used_variant_key_normalized
 
     def get_used_loop_vars(self, force_top_level=False, force_global=False):
-        return {
-            var
-            for var in self.get_used_vars(
-                force_top_level=force_top_level, force_global=force_global
-            )
-            if var in self.get_loop_vars()
-        }
+        used_vars = set(
+            self.get_used_vars(force_top_level=force_top_level, force_global=force_global)
+        )
+        return self.get_loop_vars(subset=set(used_vars))
 
     def get_section(self, name):
         if not self._rendered:
