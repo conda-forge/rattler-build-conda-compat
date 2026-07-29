@@ -459,6 +459,8 @@ def _reduce_variants(m: MetaData, variants: list[dict] | None) -> tuple[dict, di
     # compute reduced variant dict,
     # only containing used keys
     reduced_variants = {key: all_variants[key] for key in all_variants if key in all_used_vars}
+    if used_zip_keys:
+        reduced_variants["zip_keys"] = used_zip_keys
     if not reduced_variants:
         # nothing used, return original
         return variants, {}
