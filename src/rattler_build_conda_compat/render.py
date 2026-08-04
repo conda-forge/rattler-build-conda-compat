@@ -453,21 +453,19 @@ def get_package_combined_spec(recipedir_or_metadata, config, variants=None):
     return combined_spec, specs
 
 
-def _reduce_variants(
-    m: MetaData, variants: list[dict] | None, used_vars: set[str] | None = None
-) -> tuple[dict, dict]:
+def _reduce_variants(variants: dict | None, used_vars: set[str]) -> tuple[dict, dict]:
     """Reduce variants dict to the used subset
 
     Avoids combinatorial explosion in rattler_get_package_variants
-    for unused variants. ``used_vars`` overrides which variables count as
-    used; pass the union across every output in a render (rather than just
-    ``m``'s own) to compute the genuine full variant matrix.
+    for unused variants. ``used_vars`` decides which variables count as used;
+    pass the union across every output in a render (rather than just a single
+    output's own) to compute the genuine full variant matrix.
     """
     if not variants:
         return {}, {}
     all_variants = variants
     # track the used variables
-    all_used_vars = set(used_vars) if used_vars is not None else set(m.get_used_vars())
+    all_used_vars = set(used_vars)
     # keep zip_keys when at least one of the keys are used
     # remove when none of the keys in the list are used
     all_zip_keys = variants.get("zip_keys", [])
@@ -513,9 +511,9 @@ def rattler_get_package_variants(recipedir_or_metadata, config=None, variants=No
     # reduce variants to used fields before exploding the matrix
     # avoids computing potentially thousands of unused variants
     # in e.g. conda-smithy rerender
-    reduced_variants, unused_variants = _reduce_variants(
-        recipedir_or_metadata, variants, used_vars=used_vars
-    )
+    if used_vars is None:
+        used_vars = recipedir_or_metadata.get_used_vars()
+    reduced_variants, unused_variants = _reduce_variants(variants, used_vars)
     combined_spec, specs = get_package_combined_spec(
         recipedir_or_metadata, config=config, variants=reduced_variants
     )
