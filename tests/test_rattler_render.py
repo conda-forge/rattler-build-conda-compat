@@ -205,9 +205,7 @@ def test_input_variants_reflects_full_output_matrix(
     assert "extra_lib_version" not in first_meta.get_used_vars()
 
     input_variant_values = {
-        v["extra_lib_version"]
-        for v in first_meta.config.input_variants
-        if "extra_lib_version" in v
+        v["extra_lib_version"] for v in first_meta.config.input_variants if "extra_lib_version" in v
     }
     assert input_variant_values == {"1.0", "2.0"}
 
