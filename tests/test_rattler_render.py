@@ -180,6 +180,36 @@ def test_used_variant(feedstock_dir_with_recipe: Path, multiple_outputs: Path) -
     assert "unused" in meta.config.variant
 
 
+def test_input_variants_reflects_full_output_matrix(
+    feedstock_dir_with_recipe: Path, multiple_outputs_variant_collapse: Path
+) -> None:
+    """Regression test for
+    https://github.com/conda-forge/rattler-build-conda-compat/issues/134.
+
+    conda-smithy reads ``list_of_metas[0].config.input_variants`` and treats
+    it as the full variant matrix for the whole feedstock
+    (``configure_feedstock.py``). If the first output doesn't loop over a
+    variant key that a later output does, ``input_variants`` must still carry
+    every value for that key -- collapsing it to a single value silently
+    drops the sibling output from CI.
+    """
+    recipe_path = feedstock_dir_with_recipe / "recipe" / "recipe.yaml"
+    (recipe_path).write_text(multiple_outputs_variant_collapse.read_text(), encoding="utf8")
+
+    variants = {"python": ["3.12", "3.13"], "extra_lib_version": ["1.0", "2.0"]}
+    rendered = render(str(recipe_path), variants=variants, platform="linux", arch="64")
+
+    first_meta = rendered[0][0]
+    assert first_meta.name() == "repro"
+    # this output never references extra_lib_version
+    assert "extra_lib_version" not in first_meta.get_used_vars()
+
+    input_variant_values = {
+        v["extra_lib_version"] for v in first_meta.config.input_variants if "extra_lib_version" in v
+    }
+    assert input_variant_values == {"1.0", "2.0"}
+
+
 def test_bool_roundtrip(feedstock_dir_with_recipe: Path, py_abi3_recipe: Path) -> None:
     recipe_path = feedstock_dir_with_recipe / "recipe" / "recipe.yaml"
     (recipe_path).write_text(py_abi3_recipe.read_text(), encoding="utf8")

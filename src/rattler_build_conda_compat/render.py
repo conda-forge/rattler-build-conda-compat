@@ -365,6 +365,20 @@ def render(
         variants=variants,
     )
 
+    # conda-smithy treats list_of_metas[0].config.input_variants as the full
+    # variant matrix for the whole feedstock (configure_feedstock.py), not
+    # just the first output. Reducing per-output before that point can
+    # silently collapse a variant key that this output doesn't use but a
+    # sibling output does (e.g. a compiler version on a pure-python output
+    # next to a compiled one), so the union of used vars across every output
+    # is used instead of each meta's own. This is identical for every meta in
+    # the render, so it's computed once.
+    all_used_vars: set[str] = set()
+    for m in metadata_tuples:
+        all_used_vars.update(m.get_used_vars())
+
+    shared_input_variants: Optional[List[Dict]] = None
+
     for m in metadata_tuples:
         if not hasattr(m.config, "variants") or not m.config.variant:
             m.config.ignore_system_variants = True
@@ -395,9 +409,18 @@ def render(
 
             m.config.variant = package_variants[0]
 
-            # These are always the full set.  just 'variants' is the one that gets
-            #     used mostly, and can be reduced
-            m.config.input_variants = m.config.variants
+            if shared_input_variants is None:
+                if len(metadata_tuples) == 1:
+                    shared_input_variants = m.config.variants
+                else:
+                    shared_input_variants = rattler_get_package_variants(
+                        m, variants=variants, used_vars=all_used_vars
+                    )
+
+            # input_variants is always the full set across every output in
+            # this render.  'variants' is the one that gets used mostly, and
+            # can be reduced to just this output's own used vars.
+            m.config.input_variants = shared_input_variants
             m.config.variants = package_variants
 
     return [(m, False, False) for m in metadata_tuples]
@@ -433,18 +456,19 @@ def get_package_combined_spec(recipedir_or_metadata, config, variants=None):
     return combined_spec, specs
 
 
-def _reduce_variants(m: MetaData, variants: list[dict] | None) -> tuple[dict, dict]:
+def _reduce_variants(variants: dict | None, used_vars: set[str]) -> tuple[dict, dict]:
     """Reduce variants dict to the used subset
 
     Avoids combinatorial explosion in rattler_get_package_variants
-    for unused variants
+    for unused variants. ``used_vars`` decides which variables count as used;
+    pass the union across every output in a render (rather than just a single
+    output's own) to compute the genuine full variant matrix.
     """
     if not variants:
         return {}, {}
     all_variants = variants
     # track the used variables
-    all_used_vars = set()
-    all_used_vars.update(m.get_used_vars())
+    all_used_vars = set(used_vars)
     # keep zip_keys when at least one of the keys are used
     # remove when none of the keys in the list are used
     all_zip_keys = variants.get("zip_keys", [])
@@ -482,7 +506,7 @@ def _reduce_variants(m: MetaData, variants: list[dict] | None) -> tuple[dict, di
     return reduced_variants, unused_variants
 
 
-def rattler_get_package_variants(recipedir_or_metadata, config=None, variants=None):
+def rattler_get_package_variants(recipedir_or_metadata, config=None, variants=None, used_vars=None):
     # this function is *vendored* version of
     # get_package_variants from conda_build
     # with few changes to support rattler-build
@@ -490,7 +514,9 @@ def rattler_get_package_variants(recipedir_or_metadata, config=None, variants=No
     # reduce variants to used fields before exploding the matrix
     # avoids computing potentially thousands of unused variants
     # in e.g. conda-smithy rerender
-    reduced_variants, unused_variants = _reduce_variants(recipedir_or_metadata, variants)
+    if used_vars is None:
+        used_vars = recipedir_or_metadata.get_used_vars()
+    reduced_variants, unused_variants = _reduce_variants(variants, used_vars)
     combined_spec, specs = get_package_combined_spec(
         recipedir_or_metadata, config=config, variants=reduced_variants
     )

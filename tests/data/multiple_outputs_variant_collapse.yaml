@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+#
+# Minimal reproducer for https://github.com/conda-forge/rattler-build-conda-compat/issues/134:
+# output 0 loops over `python` only, output 1 additionally loops over
+# `extra_lib_version`. conda-smithy reads list_of_metas[0].config.input_variants
+# as the full matrix for the whole feedstock, so `extra_lib_version` must not
+# collapse to a single value just because the first output doesn't use it.
+
+context:
+  name: repro
+  version: "0.1.0"
+
+recipe:
+  name: repro-split
+  version: ${{ version }}
+
+outputs:
+  - package:
+      name: repro
+      version: ${{ version }}
+    build:
+      script: echo hi
+    requirements:
+      host:
+        - python ${{ python }}.*
+      run:
+        - python
+
+  - package:
+      name: repro-extra
+      version: ${{ version }}
+    build:
+      script: echo hi
+    requirements:
+      host:
+        - python ${{ python }}.*
+        - extra-lib ==${{ extra_lib_version }}
+      run:
+        - python
+        - extra-lib
+
+about:
+  homepage: https://example.com
+  summary: reproducer
+  license: BSD-3-Clause
