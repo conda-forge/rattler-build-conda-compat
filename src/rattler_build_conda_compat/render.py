@@ -410,9 +410,12 @@ def render(
             m.config.variant = package_variants[0]
 
             if shared_input_variants is None:
-                shared_input_variants = rattler_get_package_variants(
-                    m, variants=variants, used_vars=all_used_vars
-                )
+                if len(metadata_tuples) == 1:
+                    shared_input_variants = m.config.variants
+                else:
+                    shared_input_variants = rattler_get_package_variants(
+                        m, variants=variants, used_vars=all_used_vars
+                    )
 
             # input_variants is always the full set across every output in
             # this render.  'variants' is the one that gets used mostly, and
