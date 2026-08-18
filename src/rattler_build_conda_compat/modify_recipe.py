@@ -150,8 +150,9 @@ def update_version(file: Path, new_version: str, hash_: Hash | None) -> str:
     env = jinja_env()
     context = copy.deepcopy(data.get("context", {}))
     context_variables = load_recipe_context(context, env)
-    # for r-recipes we add the default `cran_mirror` variable
-    context_variables["cran_mirror"] = "https://cran.r-project.org"
+    # for r-recipes we add the default `cran_mirror` variable, unless it is
+    # already defined (e.g. by conda-forge-pinning)
+    context_variables.setdefault("cran_mirror", "https://cloud.r-project.org")
 
     for source in get_all_sources(data):
         # render the whole URL and find the hash
