@@ -76,6 +76,32 @@ def test_load_recipe_context_keeps_variant_dependent_entries() -> None:
     assert loaded_context["vcvars_ver_maj"] == '${{ ((cl_version | split(".")) [0] | int) - 5 }}'
 
 
+def test_render_recipe_with_context_keeps_variant_dependent_entries() -> None:
+    """The context section must not be rendered a second time.
+
+    `load_recipe_context` deliberately leaves entries it cannot evaluate -- those
+    reading variant variables -- as raw template strings. Rendering the whole
+    document afterwards, context section included, evaluates those same
+    expressions again without that guard and raises `UndefinedError`.
+    """
+    recipe_yaml = load_yaml((test_data / "variant_context.yaml").read_text())
+
+    rendered = render_recipe_with_context(recipe_yaml)
+
+    # plain context values resolve throughout the document
+    assert rendered["build"]["number"] == 34
+    assert rendered["outputs"][1]["package"]["name"] == "vs2015_runtime"
+
+    # variant-dependent ones stay templates instead of raising; callers such as
+    # conda-smithy detect them with `"${{" in value` and skip the affected lints
+    assert rendered["recipe"]["version"] == "${{ runtime_version }}"
+    assert rendered["outputs"][0]["package"]["name"] == 'vcomp${{ (vcver | split(".")) [0] }}'
+
+    # the returned context is the one `load_recipe_context` resolved
+    assert rendered["context"]["runtime_year"] == "2015"
+    assert rendered["context"]["vc_major"] == '${{ (vcver | split(".")) [0] }}'
+
+
 def test_resolve_recipe_metadata_with_variant_dependent_context() -> None:
     recipe_yaml = load_yaml((test_data / "variant_context.yaml").read_text())
 
