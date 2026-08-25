@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from typing import TYPE_CHECKING, Any, TypedDict
 
 import jinja2
@@ -244,9 +245,22 @@ def render_recipe_with_context(
     # render out the context section and retrieve dictionary
     context_variables = load_recipe_context(context, env)
 
-    # render the rest of the document with the values from the context
-    # and keep undefined expressions _as is_.
-    template = env.from_string(_dump_yaml_to_string(recipe_content))
-    rendered_content = template.render(context_variables)
+    # Render the rest of the document with the values from the context and keep
+    # undefined expressions _as is_. The context section is deliberately left
+    # out of this pass: `load_recipe_context` already resolved it, and the
+    # entries it could not evaluate -- those reading variant variables -- are
+    # raw templates that would raise `UndefinedError` if evaluated again here.
+    body = {key: value for key, value in recipe_content.items() if key != "context"}
+    template = env.from_string(_dump_yaml_to_string(body))
+    rendered_body: dict[str, Any] = load_yaml(template.render(context_variables))
 
-    return load_yaml(rendered_content)  # type: ignore[no-any-return]
+    # Write the results back into a copy of the original document so that key
+    # order and top-level comments survive; `body` is only a vehicle for the
+    # Jinja pass. `load_recipe_context` resolves the context dict in place and
+    # therefore shares it with `recipe_content`, so copy that too -- otherwise
+    # repeated renders of one recipe alias a single object and dump as YAML
+    # anchors.
+    rendered: dict[str, Any] = copy.deepcopy(recipe_content)  # type: ignore[arg-type]
+    for key in rendered:
+        rendered[key] = copy.deepcopy(context_variables) if key == "context" else rendered_body[key]
+    return rendered
