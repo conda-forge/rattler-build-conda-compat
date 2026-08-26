@@ -1,37 +1,247 @@
 # serializer version: 1
 # name: test_conditional_source_render
   set({
-    Source(url='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_3.24.11.1-linux.tar.gz', template='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_${{ blpapicpp_linux_version }}-linux.tar.gz', context={'name': 'blpapi', 'version': '3.24.11', 'blpapicpp_linux_version': '3.24.11.1', 'blpapicpp_win_version': '3.24.11.1', 'blpapicpp_osx_version': '3.24.11.1'}, sha256='eb1a9aa834a969a8ccbbb04061274623659a1fb273abda4413b47fe59e7ee412', md5=None),
-    Source(url='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_3.24.11.1-macos-arm64.tar.gz', template='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_${{ blpapicpp_osx_version }}-macos-arm64.tar.gz', context={'name': 'blpapi', 'version': '3.24.11', 'blpapicpp_linux_version': '3.24.11.1', 'blpapicpp_win_version': '3.24.11.1', 'blpapicpp_osx_version': '3.24.11.1'}, sha256='fa96331edf06dd2342cb27771367516296067e94961ec6e600add1c2eed9c41d', md5=None),
-    Source(url='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_3.24.11.1-windows.zip', template='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_${{ blpapicpp_win_version }}-windows.zip', context={'name': 'blpapi', 'version': '3.24.11', 'blpapicpp_linux_version': '3.24.11.1', 'blpapicpp_win_version': '3.24.11.1', 'blpapicpp_osx_version': '3.24.11.1'}, sha256='e63c0b75d50097194c425489a08cec9c0374ab7b8eafe5b015c076bb2432fa19', md5=None),
-    Source(url='https://blpapi.bloomberg.com/repository/releases/python/blpapi-3.24.11.tar.gz', template='https://blpapi.bloomberg.com/repository/releases/python/${{ name }}-${{ version }}.tar.gz', context={'name': 'blpapi', 'version': '3.24.11', 'blpapicpp_linux_version': '3.24.11.1', 'blpapicpp_win_version': '3.24.11.1', 'blpapicpp_osx_version': '3.24.11.1'}, sha256='94dc699df262187b3afe4f163526aac67fb5982b008efe851836e9f1cd5358c1', md5=None),
+    Source(
+      context=CommentedMap({
+        'name': 'blpapi',
+        'version': '3.24.11',
+        'blpapicpp_linux_version': '3.24.11.1',
+        'blpapicpp_win_version': '3.24.11.1',
+        'blpapicpp_osx_version': '3.24.11.1',
+      }),
+      md5=None,
+      sha256='94dc699df262187b3afe4f163526aac67fb5982b008efe851836e9f1cd5358c1',
+      template='https://blpapi.bloomberg.com/repository/releases/python/${{ name }}-${{ version }}.tar.gz',
+      url='https://blpapi.bloomberg.com/repository/releases/python/blpapi-3.24.11.tar.gz',
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'blpapi',
+        'version': '3.24.11',
+        'blpapicpp_linux_version': '3.24.11.1',
+        'blpapicpp_win_version': '3.24.11.1',
+        'blpapicpp_osx_version': '3.24.11.1',
+      }),
+      md5=None,
+      sha256='e63c0b75d50097194c425489a08cec9c0374ab7b8eafe5b015c076bb2432fa19',
+      template='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_${{ blpapicpp_win_version }}-windows.zip',
+      url='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_3.24.11.1-windows.zip',
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'blpapi',
+        'version': '3.24.11',
+        'blpapicpp_linux_version': '3.24.11.1',
+        'blpapicpp_win_version': '3.24.11.1',
+        'blpapicpp_osx_version': '3.24.11.1',
+      }),
+      md5=None,
+      sha256='eb1a9aa834a969a8ccbbb04061274623659a1fb273abda4413b47fe59e7ee412',
+      template='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_${{ blpapicpp_linux_version }}-linux.tar.gz',
+      url='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_3.24.11.1-linux.tar.gz',
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'blpapi',
+        'version': '3.24.11',
+        'blpapicpp_linux_version': '3.24.11.1',
+        'blpapicpp_win_version': '3.24.11.1',
+        'blpapicpp_osx_version': '3.24.11.1',
+      }),
+      md5=None,
+      sha256='fa96331edf06dd2342cb27771367516296067e94961ec6e600add1c2eed9c41d',
+      template='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_${{ blpapicpp_osx_version }}-macos-arm64.tar.gz',
+      url='https://blpapi.bloomberg.com/download/releases/raw/files/blpapi_cpp_3.24.11.1-macos-arm64.tar.gz',
+    ),
   })
 # ---
 # name: test_multi_source_render
   set({
-    Source(url='https://all.com', template='https://all.com', context={'name': 'foobar', 'version': '1.2.3'}, sha256='yyy', md5=None),
-    Source(url='https://all.com/foobar/1.2.3.zip', template='https://all.com/${{ name }}/${{ version }}.zip', context={'name': 'foobar', 'version': '1.2.3'}, sha256='yyy', md5=None),
-    Source(url='https://foo.com', template='https://foo.com', context={'name': 'foobar', 'version': '1.2.3'}, sha256='679d42a76b82a6dc20ffd9048ab45fb2e5557a526113aaedc7419e12f3cfab38', md5=None),
-    Source(url='https://osx.com/osx-64/foo.zip', template='https://osx.com/${{ target_platform }}/foo.zip', context={'name': 'foobar', 'version': '1.2.3'}, sha256='zzz', md5=None),
-    Source(url='https://osx.com/win-64/foo.zip', template='https://osx.com/${{ target_platform }}/foo.zip', context={'name': 'foobar', 'version': '1.2.3'}, sha256='zzz', md5=None),
-    Source(url='https://win.com', template='https://win.com', context={'name': 'foobar', 'version': '1.2.3'}, sha256='xxx', md5=None),
-    Source(url=['https://foo.com/linux-64/zip.zip', 'https://mirror.com/linux-64/zip.zip'], template=['https://foo.com/${{ target_platform }}/zip.zip', 'https://mirror.com/${{ target_platform }}/zip.zip'], context={'name': 'foobar', 'version': '1.2.3'}, sha256='yyy', md5=None),
-    Source(url=['https://foo.com/osx-64/zip.zip', 'https://mirror.com/osx-64/zip.zip'], template=['https://foo.com/${{ target_platform }}/zip.zip', 'https://mirror.com/${{ target_platform }}/zip.zip'], context={'name': 'foobar', 'version': '1.2.3'}, sha256='yyy', md5=None),
-    Source(url=['https://foo.com/osx-arm64/zip.zip', 'https://mirror.com/osx-arm64/zip.zip'], template=['https://foo.com/${{ target_platform }}/zip.zip', 'https://mirror.com/${{ target_platform }}/zip.zip'], context={'name': 'foobar', 'version': '1.2.3'}, sha256='yyy', md5=None),
-    Source(url=['https://foo.com/win-64/zip.zip', 'https://mirror.com/win-64/zip.zip'], template=['https://foo.com/${{ target_platform }}/zip.zip', 'https://mirror.com/${{ target_platform }}/zip.zip'], context={'name': 'foobar', 'version': '1.2.3'}, sha256='xxx', md5=None),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='679d42a76b82a6dc20ffd9048ab45fb2e5557a526113aaedc7419e12f3cfab38',
+      template='https://foo.com',
+      url='https://foo.com',
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='xxx',
+      template='https://win.com',
+      url='https://win.com',
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='xxx',
+      template=CommentedSeq([
+        'https://foo.com/${{ target_platform }}/zip.zip',
+        'https://mirror.com/${{ target_platform }}/zip.zip',
+      ]),
+      url=list([
+        'https://foo.com/win-64/zip.zip',
+        'https://mirror.com/win-64/zip.zip',
+      ]),
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='yyy',
+      template='https://all.com',
+      url='https://all.com',
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='yyy',
+      template='https://all.com/${{ name }}/${{ version }}.zip',
+      url='https://all.com/foobar/1.2.3.zip',
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='yyy',
+      template=CommentedSeq([
+        'https://foo.com/${{ target_platform }}/zip.zip',
+        'https://mirror.com/${{ target_platform }}/zip.zip',
+      ]),
+      url=list([
+        'https://foo.com/linux-64/zip.zip',
+        'https://mirror.com/linux-64/zip.zip',
+      ]),
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='yyy',
+      template=CommentedSeq([
+        'https://foo.com/${{ target_platform }}/zip.zip',
+        'https://mirror.com/${{ target_platform }}/zip.zip',
+      ]),
+      url=list([
+        'https://foo.com/osx-64/zip.zip',
+        'https://mirror.com/osx-64/zip.zip',
+      ]),
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='yyy',
+      template=CommentedSeq([
+        'https://foo.com/${{ target_platform }}/zip.zip',
+        'https://mirror.com/${{ target_platform }}/zip.zip',
+      ]),
+      url=list([
+        'https://foo.com/osx-arm64/zip.zip',
+        'https://mirror.com/osx-arm64/zip.zip',
+      ]),
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='zzz',
+      template='https://osx.com/${{ target_platform }}/foo.zip',
+      url='https://osx.com/osx-64/foo.zip',
+    ),
+    Source(
+      context=CommentedMap({
+        'name': 'foobar',
+        'version': '1.2.3',
+      }),
+      md5=None,
+      sha256='zzz',
+      template='https://osx.com/${{ target_platform }}/foo.zip',
+      url='https://osx.com/win-64/foo.zip',
+    ),
   })
 # ---
 # name: test_outputs_only_source_render
   set({
-    Source(url='https://pypi.org/packages/source/d/dirac/dirac-9.0.16.tar.gz', template='https://pypi.org/packages/source/d/dirac/dirac-${{ version }}.tar.gz', context={'version': '9.0.16'}, sha256='548b85b3b0ecf17487f3deba5073763583dd7eb812bf063f409153fc44c7402f', md5=None),
-    Source(url='https://pypi.org/packages/source/d/diraccommon/diraccommon-9.0.16.tar.gz', template='https://pypi.org/packages/source/d/diraccommon/diraccommon-${{ version }}.tar.gz', context={'version': '9.0.16'}, sha256='7ae43c63075770e1314c40f2e7bd7708ae22a45262489e8912b881adf9f1aa2c', md5=None),
-    Source(url='https://raw.githubusercontent.com/DIRACGrid/DIRAC/refs/tags/v9.0.16/LICENSE', template='https://raw.githubusercontent.com/DIRACGrid/DIRAC/refs/tags/v${{ version }}/LICENSE', context={'version': '9.0.16'}, sha256='bb2af8a15ea39a351e7a95d93cf8e4251c1ae6ae4cac8ee3a89cf9b155cd6e54', md5=None),
+    Source(
+      context=CommentedMap({
+        'version': '9.0.16',
+      }),
+      md5=None,
+      sha256='548b85b3b0ecf17487f3deba5073763583dd7eb812bf063f409153fc44c7402f',
+      template='https://pypi.org/packages/source/d/dirac/dirac-${{ version }}.tar.gz',
+      url='https://pypi.org/packages/source/d/dirac/dirac-9.0.16.tar.gz',
+    ),
+    Source(
+      context=CommentedMap({
+        'version': '9.0.16',
+      }),
+      md5=None,
+      sha256='7ae43c63075770e1314c40f2e7bd7708ae22a45262489e8912b881adf9f1aa2c',
+      template='https://pypi.org/packages/source/d/diraccommon/diraccommon-${{ version }}.tar.gz',
+      url='https://pypi.org/packages/source/d/diraccommon/diraccommon-9.0.16.tar.gz',
+    ),
+    Source(
+      context=CommentedMap({
+        'version': '9.0.16',
+      }),
+      md5=None,
+      sha256='bb2af8a15ea39a351e7a95d93cf8e4251c1ae6ae4cac8ee3a89cf9b155cd6e54',
+      template='https://raw.githubusercontent.com/DIRACGrid/DIRAC/refs/tags/v${{ version }}/LICENSE',
+      url='https://raw.githubusercontent.com/DIRACGrid/DIRAC/refs/tags/v9.0.16/LICENSE',
+    ),
   })
 # ---
 # name: test_variant_variables_source_render
   set({
-    Source(url='https://pypi.org/packages/source/p/polars-lts-cpu/polars_lts_cpu-1.20.0.tar.gz', template="https://pypi.org/packages/source/p/${{ polars_variant }}/${{ polars_variant | replace('-', '_') }}-${{ version }}.tar.gz", context={'version': '1.20.0'}, sha256='f8770fe1a752f60828ec73e6215c7dadcb2badd1f34dcb1def7a0f4ca0ac36f8', md5=None),
-    Source(url='https://pypi.org/packages/source/p/polars-u64-idx/polars_u64_idx-1.20.0.tar.gz', template="https://pypi.org/packages/source/p/${{ polars_variant }}/${{ polars_variant | replace('-', '_') }}-${{ version }}.tar.gz", context={'version': '1.20.0'}, sha256='a92fadacf59776bef2d777f99345c4d089cf4f8b3fd61f5728087bab27a46a75', md5=None),
-    Source(url='https://pypi.org/packages/source/p/polars/polars-1.20.0.tar.gz', template="https://pypi.org/packages/source/p/polars/${{ polars_variant | replace('-', '_') }}-${{ version }}.tar.gz", context={'version': '1.20.0'}, sha256='e8e9e3156fae02b58e276e5f2c16a5907a79b38617a9e2d731b533d87798f451', md5=None),
+    Source(
+      context=CommentedMap({
+        'version': '1.20.0',
+      }),
+      md5=None,
+      sha256='a92fadacf59776bef2d777f99345c4d089cf4f8b3fd61f5728087bab27a46a75',
+      template="https://pypi.org/packages/source/p/${{ polars_variant }}/${{ polars_variant | replace('-', '_') }}-${{ version }}.tar.gz",
+      url='https://pypi.org/packages/source/p/polars-u64-idx/polars_u64_idx-1.20.0.tar.gz',
+    ),
+    Source(
+      context=CommentedMap({
+        'version': '1.20.0',
+      }),
+      md5=None,
+      sha256='e8e9e3156fae02b58e276e5f2c16a5907a79b38617a9e2d731b533d87798f451',
+      template="https://pypi.org/packages/source/p/polars/${{ polars_variant | replace('-', '_') }}-${{ version }}.tar.gz",
+      url='https://pypi.org/packages/source/p/polars/polars-1.20.0.tar.gz',
+    ),
+    Source(
+      context=CommentedMap({
+        'version': '1.20.0',
+      }),
+      md5=None,
+      sha256='f8770fe1a752f60828ec73e6215c7dadcb2badd1f34dcb1def7a0f4ca0ac36f8',
+      template="https://pypi.org/packages/source/p/${{ polars_variant }}/${{ polars_variant | replace('-', '_') }}-${{ version }}.tar.gz",
+      url='https://pypi.org/packages/source/p/polars-lts-cpu/polars_lts_cpu-1.20.0.tar.gz',
+    ),
   })
 # ---
