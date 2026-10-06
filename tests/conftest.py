@@ -93,6 +93,11 @@ def multiple_outputs_variant_collapse() -> Path:
 
 
 @pytest.fixture
+def dotted_output_name() -> Path:
+    return Path("tests/data/dotted_output_name.yaml")
+
+
+@pytest.fixture
 def feedstock_dir_with_recipe(tmpdir: Path) -> Path:
     feedstock_dir = tmpdir / "feedstock"
 
