@@ -1,0 +1,20 @@
+context:
+  version: "4.0.2"
+  abi_version: "4.0"
+
+recipe:
+  name: libfoo
+  version: ${{ version }}
+
+build:
+  number: 0
+
+outputs:
+  - package:
+      name: libfoo-${{ abi_version }}
+
+  - package:
+      name: libfoo
+    requirements:
+      run:
+        - ${{ pin_subpackage("libfoo-" ~ abi_version, exact=True) }}

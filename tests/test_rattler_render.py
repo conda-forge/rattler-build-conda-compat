@@ -180,6 +180,28 @@ def test_used_variant(feedstock_dir_with_recipe: Path, multiple_outputs: Path) -
     assert "unused" in meta.config.variant
 
 
+def test_used_variant_dotted_output_name(
+    feedstock_dir_with_recipe: Path, dotted_output_name: Path
+) -> None:
+    recipe_path = feedstock_dir_with_recipe / "recipe" / "recipe.yaml"
+    (recipe_path).write_text(dotted_output_name.read_text(), encoding="utf8")
+
+    # rattler-build normalizes "-" and "." in variant keys to "_", so the
+    # variant file key for the output "libfoo-4.0" is "libfoo_4_0"
+    variants = {"libfoo_4_0": ["4.0"]}
+    rendered = render(str(recipe_path), variants=variants, platform="linux", arch="64")
+    # one entry per output
+    assert len(rendered) == 2
+    meta = rendered[-1][0]
+    assert meta.name() == "libfoo"
+    # the exact pin on the sibling output must not be reported as a used variant
+    assert "libfoo_4_0" not in meta.get_used_vars()
+    assert "libfoo_4_0" not in meta.get_used_variant()
+
+    # the key keeps its value from the variant config
+    assert meta.config.variant["libfoo_4_0"] == "4.0"
+
+
 def test_input_variants_reflects_full_output_matrix(
     feedstock_dir_with_recipe: Path, multiple_outputs_variant_collapse: Path
 ) -> None:

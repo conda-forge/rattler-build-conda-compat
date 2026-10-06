@@ -34,6 +34,12 @@ from rattler_build_conda_compat.utils import _get_recipe_metadata, find_recipe
 from rattler_build_conda_compat.yaml import _yaml_object
 
 
+def _normalize_variant_key(key: str) -> str:
+    # Mirrors rattler-build's variant key normalization, which treats "-", "."
+    # and "_" as equivalent and reports keys with all three as "_".
+    return key.replace("-", "_").replace(".", "_")
+
+
 @contextlib.contextmanager
 def _staging_flattened_recipe_dir(recipe_dir: str, meta_name: str) -> Iterator[str]:
     """Yield a recipe directory path whose ``meta_name`` file has staging
@@ -224,7 +230,8 @@ class MetaData(CondaMetaData):
             return set()
 
         used_vars = [
-            var.replace("-", "_") for var in self.meta["build_configuration"]["variant"].keys()
+            _normalize_variant_key(var)
+            for var in self.meta["build_configuration"]["variant"].keys()
         ]
         # don't include subpackages in used_vars
         used_vars = [
@@ -242,7 +249,7 @@ class MetaData(CondaMetaData):
 
     def _get_normalized_subpackages(self) -> List:
         pkgs = self.meta.get("build_configuration", {}).get("subpackages", {})
-        return [pkg.replace("-", "_") for pkg in pkgs]
+        return [_normalize_variant_key(pkg) for pkg in pkgs]
 
     def get_used_variant(self) -> Dict:
         if "build_configuration" not in self.meta:
@@ -256,7 +263,7 @@ class MetaData(CondaMetaData):
         used_variant_key_normalized = {}
 
         for key, value in used_variant.items():
-            normalized_key = key.replace("-", "_")
+            normalized_key = _normalize_variant_key(key)
 
             if normalized_key in self._get_normalized_subpackages():
                 # don't include subpackage names in used_variant
