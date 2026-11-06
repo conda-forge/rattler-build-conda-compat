@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import datetime
 import textwrap
 from pathlib import Path
 
-from rattler_build_conda_compat.jinja.filters import _version_to_build_string
+from rattler_build_conda_compat.jinja.filters import _datetimeformat, _version_to_build_string
 from rattler_build_conda_compat.jinja.jinja import (
     jinja_env,
     load_recipe_context,
@@ -33,6 +34,20 @@ def test_version_to_build_string() -> None:
     assert _version_to_build_string("nothing") == "nothing"
     some_undefined = _MissingUndefined(name="python")
     assert _version_to_build_string(some_undefined) == "python_version_to_build_string"
+
+
+def test_datetimeformat() -> None:
+    iso_str = "2026-04-13T12:34:45+0000"
+    dt = datetime.datetime.fromisoformat(iso_str)
+    ts = dt.timestamp()
+    assert _datetimeformat(dt.timestamp(), format="iso") == iso_str
+    assert _datetimeformat(dt.timestamp(), format="short") == "2026-04-13 12:34"
+    assert _datetimeformat(dt.timestamp(), format="medium") == "Apr 13 2026 12:34"
+    assert _datetimeformat(dt.timestamp(), format="long") == "April 13 2026 12:34:45"
+    assert _datetimeformat(dt.timestamp(), format="full") == "Monday, April 13 2026 12:34:45.0"
+    assert _datetimeformat(dt.timestamp(), format="unix") == "1776083685"
+    assert _datetimeformat(dt.timestamp(), format="unix") == str(int(ts))
+    assert _datetimeformat(dt.timestamp(), format="%Y%h%H") == "2026Apr12"
 
 
 def test_context_rendering(snapshot) -> None:
