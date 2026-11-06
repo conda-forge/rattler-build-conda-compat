@@ -39,19 +39,20 @@ def _now() -> float:
 
 def _datetimefilter(
     timestamp: float | str,
-    format: str | None = None,  # noqa: A002
+    *,
+    format: str,  # noqa: A002
     tz: str | None = None,
 ) -> str:
     """Filter to format a timestamp."""
 
     if tz is not None:
-        tz = ZoneInfo(tz)
+        zi = ZoneInfo(tz)
 
     if isinstance(timestamp, str):
         ts = datetime.datetime.fromisoformat(timestamp)
         if tz is not None:
-            ts = ts.replace(tzinfo=tz)
+            ts = ts.replace(tzinfo=zi)
     else:
-        ts = datetime.datetime.fromtimestamp(timestamp, tz=tz)
+        ts = datetime.datetime.fromtimestamp(timestamp, tz=zi)
 
     return ts.strftime(format)
