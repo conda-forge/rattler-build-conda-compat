@@ -10,7 +10,7 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScala
 
 from rattler_build_conda_compat.jinja.filters import (
     _bool,
-    _datetimefilter,
+    _datetimeformat,
     _now,
     _split,
     _version_to_build_string,
@@ -96,7 +96,7 @@ def jinja_env(variant_config: Mapping[str, str] | None = None) -> SandboxedEnvir
             "version_to_buildstring": _version_to_build_string,
             "split": _split,
             "bool": _bool,
-            "datetimefilter": _datetimefilter,
+            "datetimeformat": _datetimeformat,
         }
     )
     return env

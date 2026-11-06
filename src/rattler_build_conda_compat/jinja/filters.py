@@ -37,7 +37,7 @@ def _now() -> float:
     return time.time()
 
 
-def _datetimefilter(
+def _datetimeformat(
     timestamp: float | str,
     *,
     format: str,  # noqa: A002
