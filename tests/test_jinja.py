@@ -37,7 +37,7 @@ def test_version_to_build_string() -> None:
 
 
 def test_datetimeformat() -> None:
-    iso_str = "2026-04-13T12:34:45+0000"
+    iso_str = "2026-04-13T12:34:45+00:00"
     dt = datetime.datetime.fromisoformat(iso_str)
     ts = dt.timestamp()
     assert _datetimeformat(dt.timestamp(), format="iso") == iso_str

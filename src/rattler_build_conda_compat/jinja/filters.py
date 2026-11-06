@@ -65,6 +65,6 @@ def _datetimeformat(
     elif format == "unix":
         return str(int(ts.timestamp()))
     elif format == "iso":
-        format = "%Y-%m-%dT%H:%M:%S%z"  # noqa: A001
+        return ts.isoformat()
 
     return ts.strftime(format)
