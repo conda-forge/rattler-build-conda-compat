@@ -8,7 +8,13 @@ from jinja2 import UndefinedError
 from jinja2.sandbox import SandboxedEnvironment
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
 
-from rattler_build_conda_compat.jinja.filters import _bool, _datetimefilter, _now, _split, _version_to_build_string
+from rattler_build_conda_compat.jinja.filters import (
+    _bool,
+    _datetimefilter,
+    _now,
+    _split,
+    _version_to_build_string,
+)
 from rattler_build_conda_compat.jinja.objects import (
     _stub_compatible_pin,
     _stub_match,

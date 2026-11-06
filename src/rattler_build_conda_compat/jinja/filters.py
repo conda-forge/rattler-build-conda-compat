@@ -37,7 +37,11 @@ def _now() -> float:
     return time.time()
 
 
-def _datetimefilter(timestamp: float | str, format: str | None = None, tz: str | None = None) -> str:  # noqa: A002
+def _datetimefilter(
+    timestamp: float | str,
+    format: str | None = None,  # noqa: A002
+    tz: str | None = None,
+) -> str:
     """Filter to format a timestamp."""
 
     if tz is not None:
@@ -51,5 +55,3 @@ def _datetimefilter(timestamp: float | str, format: str | None = None, tz: str |
         ts = datetime.datetime.fromtimestamp(timestamp, tz=tz)
 
     return ts.strftime(format)
-
-
