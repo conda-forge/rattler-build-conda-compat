@@ -8,7 +8,13 @@ from jinja2 import UndefinedError
 from jinja2.sandbox import SandboxedEnvironment
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
 
-from rattler_build_conda_compat.jinja.filters import _bool, _split, _version_to_build_string
+from rattler_build_conda_compat.jinja.filters import (
+    _bool,
+    _datetimeformat,
+    _now,
+    _split,
+    _version_to_build_string,
+)
 from rattler_build_conda_compat.jinja.objects import (
     _stub_compatible_pin,
     _stub_match,
@@ -78,6 +84,7 @@ def jinja_env(variant_config: Mapping[str, str] | None = None) -> SandboxedEnvir
             "is_unix": lambda x: not x.startswith("win"),
             "is_win": lambda x: x.startswith("win"),
             "is_linux": lambda x: x.startswith("linux"),
+            "now": _now,
             **extra_vars,
             **variant_config,
         }
@@ -89,6 +96,7 @@ def jinja_env(variant_config: Mapping[str, str] | None = None) -> SandboxedEnvir
             "version_to_buildstring": _version_to_build_string,
             "split": _split,
             "bool": _bool,
+            "datetimeformat": _datetimeformat,
         }
     )
     return env
