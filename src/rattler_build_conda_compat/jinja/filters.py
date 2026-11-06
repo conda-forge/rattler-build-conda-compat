@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import datetime
+import time
+from zoneinfo import ZoneInfo
+
 from rattler_build_conda_compat.jinja.utils import _MissingUndefined
 
 
@@ -26,3 +30,26 @@ def _bool(value: str) -> bool:
 def _split(s: str, sep: str | None = None) -> list[str]:
     """Filter that split a string by a separator"""
     return s.split(sep)
+
+
+def _now() -> float:
+    """Function giving the current unix timestamp"""
+    return time.time()
+
+
+def _datetimefilter(timestamp: float | str, format: str | None = None, tz: str | None = None) -> str:  # noqa: A002
+    """Filter to format a timestamp."""
+
+    if tz is not None:
+        tz = ZoneInfo(tz)
+
+    if isinstance(timestamp, str):
+        ts = datetime.datetime.fromisoformat(timestamp)
+        if tz is not None:
+            ts = ts.replace(tzinfo=tz)
+    else:
+        ts = datetime.datetime.fromtimestamp(timestamp, tz=tz)
+
+    return ts.strftime(format)
+
+
