@@ -492,9 +492,6 @@ def _reduce_variants(variants: dict | None, used_vars: set[str]) -> tuple[dict, 
     reduced_variants = {key: all_variants[key] for key in all_variants if key in all_used_vars}
     if used_zip_keys:
         reduced_variants["zip_keys"] = used_zip_keys
-    if not reduced_variants:
-        # nothing used, return original
-        return variants, {}
 
     # keep track of unused variants to put back
     # after exploding the list

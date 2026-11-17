@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rattler_build_conda_compat.loader import parse_recipe_config_file
-from rattler_build_conda_compat.render import MetaData, render
+from rattler_build_conda_compat.render import MetaData, _reduce_variants, render
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -262,3 +262,15 @@ def test_bool_roundtrip(feedstock_dir_with_recipe: Path, py_abi3_recipe: Path) -
     assert meta_noabi3.meta["build_configuration"]["variant"]["is_abi3"] is False
     assert "python-abi3" in meta_abi3.meta["recipe"]["requirements"]["host"]
     assert "python-abi3" not in meta_noabi3.meta["recipe"]["requirements"]["host"]
+
+
+def test_reduce_variants_nothing_used() -> None:
+    variants = {
+        "python": ["3.12", "3.13"],
+        "nodejs": ["22", "24"],
+        "zip_keys": [["python", "nodejs"]],
+    }
+    reduced, unused = _reduce_variants(variants, set())
+    # nothing is exploded: every key keeps its first value
+    assert reduced == {}
+    assert unused == {"python": "3.12", "nodejs": "22", "zip_keys": [["python", "nodejs"]]}
