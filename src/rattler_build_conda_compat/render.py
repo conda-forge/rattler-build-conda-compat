@@ -31,7 +31,6 @@ from rattler_build_conda_compat.jinja.jinja import resolve_recipe_metadata
 from rattler_build_conda_compat.loader import load_yaml, parse_recipe_config_file
 from rattler_build_conda_compat.outputs import flatten_staging_inheritance
 from rattler_build_conda_compat.utils import _get_recipe_metadata, find_recipe
-from rattler_build_conda_compat.yaml import _yaml_object
 
 
 def _normalize_variant_key(key: str) -> str:
@@ -71,6 +70,21 @@ def _staging_flattened_recipe_dir(recipe_dir: str, meta_name: str) -> Iterator[s
             os.symlink(entry, tmp_path / entry.name)
         (tmp_path / meta_name).write_text(flattened, encoding="utf-8")
         yield str(tmp_path)
+
+
+def _variants_for_rattler_build(value: Any) -> Any:  # noqa: ANN401
+    """Turn conda-build's "true" and "false" strings back into booleans.
+
+    As ``_yaml_represent_str`` does when the variants are dumped as YAML; every
+    other string stays a string.
+    """
+    if isinstance(value, str):
+        return value == "true" if value in {"true", "false"} else value
+    if isinstance(value, dict):
+        return {key: _variants_for_rattler_build(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_variants_for_rattler_build(item) for item in value]
+    return value
 
 
 class MetaData(CondaMetaData):
@@ -187,14 +201,16 @@ class MetaData(CondaMetaData):
         build_platform_and_arch = f"{self.config.platform}-{self.config.arch}"
         target_platform_and_arch = f"{self.config.host_platform}-{self.config.host_arch}"
 
-        yaml = _yaml_object()
         try:
             with _staging_flattened_recipe_dir(self.path, self._meta_name) as recipe_dir:
                 with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8") as outfile:
                     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8") as variants_file:
                         # dump variants in our variants that will be used to generate recipe
                         if variants:
-                            yaml.dump(variants, variants_file)
+                            # JSON is YAML, and writing it is many times faster than
+                            # a round-trip YAML dump of the whole pinning
+                            json.dump(_variants_for_rattler_build(variants), variants_file)
+                            variants_file.flush()
 
                         variants_path = variants_file.name
 
@@ -492,9 +508,6 @@ def _reduce_variants(variants: dict | None, used_vars: set[str]) -> tuple[dict, 
     reduced_variants = {key: all_variants[key] for key in all_variants if key in all_used_vars}
     if used_zip_keys:
         reduced_variants["zip_keys"] = used_zip_keys
-    if not reduced_variants:
-        # nothing used, return original
-        return variants, {}
 
     # keep track of unused variants to put back
     # after exploding the list

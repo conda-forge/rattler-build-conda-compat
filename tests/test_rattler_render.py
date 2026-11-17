@@ -1,11 +1,20 @@
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from ruamel.yaml import YAML
+
 from rattler_build_conda_compat.loader import parse_recipe_config_file
-from rattler_build_conda_compat.render import MetaData, render
+from rattler_build_conda_compat.render import (
+    MetaData,
+    _reduce_variants,
+    _variants_for_rattler_build,
+    render,
+)
+from rattler_build_conda_compat.yaml import _dump_yaml_to_string
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -262,3 +271,31 @@ def test_bool_roundtrip(feedstock_dir_with_recipe: Path, py_abi3_recipe: Path) -
     assert meta_noabi3.meta["build_configuration"]["variant"]["is_abi3"] is False
     assert "python-abi3" in meta_abi3.meta["recipe"]["requirements"]["host"]
     assert "python-abi3" not in meta_noabi3.meta["recipe"]["requirements"]["host"]
+
+
+def test_reduce_variants_nothing_used() -> None:
+    variants = {
+        "python": ["3.12", "3.13"],
+        "nodejs": ["22", "24"],
+        "zip_keys": [["python", "nodejs"]],
+    }
+    reduced, unused = _reduce_variants(variants, set())
+    # nothing is exploded: every key keeps its first value
+    assert reduced == {}
+    assert unused == {"python": "3.12", "nodejs": "22", "zip_keys": [["python", "nodejs"]]}
+
+
+def test_variants_json_reads_as_yaml_dump() -> None:
+    variants = {
+        "python": ["3.12", "3.13"],
+        "is_abi3": ["true", "false"],
+        "numpy": ["2", "1.26"],
+        "c_compiler_version": ["14"],
+        "channel_sources": ["conda-forge"],
+        "maybe": ["yes", "no", "null", "~", "1e3", "0o17", ""],
+        "pin_run_as_build": {"python": {"min_pin": "x.x", "max_pin": "x.x"}},
+        "zip_keys": [["python", "is_abi3"]],
+    }
+    yaml = YAML(typ="safe")
+    as_json = json.dumps(_variants_for_rattler_build(variants))
+    assert yaml.load(as_json) == yaml.load(_dump_yaml_to_string(variants))
