@@ -35,7 +35,7 @@ def _split(s: str, sep: str | None = None) -> list[str]:
 
 
 def _startingwith(value: object, prefix: str) -> bool:
-    """Test whether a string starts with `prefix` (rattler-build's `startingwith`)."""
+    """Jinja test `value is startingwith(prefix)`, as provided by rattler-build."""
     if isinstance(value, Undefined):
         # Raise so that callers keep the unresolved template as is.
         value._fail_with_undefined_error()  # noqa: SLF001
@@ -43,7 +43,7 @@ def _startingwith(value: object, prefix: str) -> bool:
 
 
 def _endingwith(value: object, suffix: str) -> bool:
-    """Test whether a string ends with `suffix` (rattler-build's `endingwith`)."""
+    """Jinja test `value is endingwith(suffix)`, as provided by rattler-build."""
     if isinstance(value, Undefined):
         value._fail_with_undefined_error()  # noqa: SLF001
     return str(value).endswith(suffix)

@@ -102,7 +102,10 @@ def jinja_env(variant_config: Mapping[str, str] | None = None) -> SandboxedEnvir
         }
     )
 
-    # inject rattler-build recipe tests that plain Jinja2 does not provide
+    # inject the Jinja *tests* (used with the `is` operator, e.g.
+    # `${{ build_platform is startingwith("linux") }}`) that rattler-build
+    # provides but plain Jinja2 does not. These are unrelated to a recipe's
+    # `tests:` section.
     env.tests.update(
         {
             "startingwith": _startingwith,
