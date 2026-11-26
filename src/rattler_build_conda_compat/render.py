@@ -34,6 +34,21 @@ from rattler_build_conda_compat.utils import _get_recipe_metadata, find_recipe
 from rattler_build_conda_compat.yaml import _yaml_object
 
 
+def _variant_value_str(value: Any) -> str:
+    """Render a variant value the way conda-build variants spell it.
+
+    conda-build variants are always strings, and booleans are spelled
+    ``"true"`` / ``"false"`` (see `MetaData.get_used_variant`). Plain
+    `str()` would turn a bool from a variants.yaml into ``"True"`` /
+    ``"False"`` instead, so the two sides would never compare equal.
+    """
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    return str(value)
+
+
 def _normalize_variant_key(key: str) -> str:
     # Mirrors rattler-build's variant key normalization, which treats "-", "."
     # and "_" as equivalent and reports keys with all three as "_".
@@ -271,10 +286,8 @@ class MetaData(CondaMetaData):
 
             # conda-build variants are always strings
             # coerce bool back to str
-            if value is True:
-                value = "true"
-            elif value is False:
-                value = "false"
+            if isinstance(value, bool):
+                value = _variant_value_str(value)
 
             used_variant_key_normalized[normalized_key] = value
 
@@ -399,6 +412,19 @@ def render(
 
             m.config.variants = package_variants[:]
 
+            # Compute the shared matrix before `m.config.variant` is pinned
+            # below: `get_package_combined_spec` feeds `config.variant` back in
+            # as a spec, which would collapse every key that comes only from
+            # the recipe's variants.yaml (not from `variants`) to this output's
+            # single value.
+            if shared_input_variants is None:
+                if len(metadata_tuples) == 1:
+                    shared_input_variants = m.config.variants
+                else:
+                    shared_input_variants = rattler_get_package_variants(
+                        m, variants=variants, used_vars=all_used_vars
+                    )
+
             # we need to discard variants that we don't use
             for pkg_variant in package_variants[:]:
                 for (
@@ -407,22 +433,16 @@ def render(
                 ) in used_variant.items():
                     if used_variant_key in pkg_variant:
                         if (
-                            # convert both values to str(), since conda-smithy passes strings
-                            # in variants, but package_variants contain actual types
-                            str(pkg_variant[used_variant_key]) != str(used_variant_value)
+                            # compare as conda-build strings, since conda-smithy passes strings
+                            # in variants, but package_variants contain actual types (e.g. bools
+                            # from a variants.yaml)
+                            _variant_value_str(pkg_variant[used_variant_key])
+                            != _variant_value_str(used_variant_value)
                         ):
                             package_variants.remove(pkg_variant)
                             break
 
             m.config.variant = package_variants[0]
-
-            if shared_input_variants is None:
-                if len(metadata_tuples) == 1:
-                    shared_input_variants = m.config.variants
-                else:
-                    shared_input_variants = rattler_get_package_variants(
-                        m, variants=variants, used_vars=all_used_vars
-                    )
 
             # input_variants is always the full set across every output in
             # this render.  'variants' is the one that gets used mostly, and

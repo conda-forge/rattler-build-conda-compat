@@ -4,6 +4,8 @@ import datetime
 import time
 from zoneinfo import ZoneInfo
 
+from jinja2 import Undefined
+
 from rattler_build_conda_compat.jinja.utils import _MissingUndefined
 
 
@@ -30,6 +32,21 @@ def _bool(value: str) -> bool:
 def _split(s: str, sep: str | None = None) -> list[str]:
     """Filter that split a string by a separator"""
     return s.split(sep)
+
+
+def _startingwith(value: object, prefix: str) -> bool:
+    """Jinja test `value is startingwith(prefix)`, as provided by rattler-build."""
+    if isinstance(value, Undefined):
+        # Raise so that callers keep the unresolved template as is.
+        value._fail_with_undefined_error()  # noqa: SLF001
+    return str(value).startswith(prefix)
+
+
+def _endingwith(value: object, suffix: str) -> bool:
+    """Jinja test `value is endingwith(suffix)`, as provided by rattler-build."""
+    if isinstance(value, Undefined):
+        value._fail_with_undefined_error()  # noqa: SLF001
+    return str(value).endswith(suffix)
 
 
 def _now() -> float:
