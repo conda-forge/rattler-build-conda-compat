@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import contextlib
+import functools
 from collections import OrderedDict
 import json
 from itertools import chain
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -55,6 +57,43 @@ def _normalize_variant_key(key: str) -> str:
     return key.replace("-", "_").replace(".", "_")
 
 
+@functools.lru_cache(maxsize=None)
+def _rattler_build_supports_no_config() -> bool:
+    """Whether the installed rattler-build understands ``--no-config``.
+
+    Newer rattler-build versions discover pixi / rattler-build configuration
+    files (e.g. ``$PIXI_HOME/config.toml``) automatically. Rendering a
+    feedstock must not depend on the invoking user's configuration, so we
+    pass ``--no-config`` whenever it is available. Older versions neither
+    know the flag nor load any configuration, so it is simply omitted.
+    """
+    try:
+        result = subprocess.run(
+            ["rattler-build", "build", "--help"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    return "--no-config" in result.stdout
+
+
+def _link_or_copy(src: Path, dst: Path) -> None:
+    """Symlink ``src`` to ``dst``, falling back to a copy.
+
+    Creating symlinks on Windows requires developer mode or elevated
+    privileges, so fall back to copying when that is not possible.
+    """
+    try:
+        os.symlink(src, dst, target_is_directory=src.is_dir())
+    except OSError:
+        if src.is_dir():
+            shutil.copytree(src, dst, symlinks=True)
+        else:
+            shutil.copy2(src, dst)
+
+
 @contextlib.contextmanager
 def _staging_flattened_recipe_dir(recipe_dir: str, meta_name: str) -> Iterator[str]:
     """Yield a recipe directory path whose ``meta_name`` file has staging
@@ -64,7 +103,8 @@ def _staging_flattened_recipe_dir(recipe_dir: str, meta_name: str) -> Iterator[s
     the flattened recipe in place of ``meta_name``. This keeps variants files
     and helper scripts reachable at their original relative paths while
     handing rattler-build a recipe it can render without the experimental
-    staging feature.
+    staging feature. Where symlinks cannot be created (e.g. Windows without
+    developer mode), the siblings are copied instead.
     """
     source = Path(recipe_dir)
     recipe_file = source / meta_name
@@ -83,7 +123,7 @@ def _staging_flattened_recipe_dir(recipe_dir: str, meta_name: str) -> Iterator[s
         for entry in source.iterdir():
             if entry.name == meta_name:
                 continue
-            os.symlink(entry, tmp_path / entry.name)
+            _link_or_copy(entry, tmp_path / entry.name)
         (tmp_path / meta_name).write_text(flattened, encoding="utf-8")
         yield str(tmp_path)
 
@@ -224,6 +264,15 @@ class MetaData(CondaMetaData):
                             "--build-platform",
                             build_platform_and_arch,
                         ]
+
+                        if _rattler_build_supports_no_config():
+                            run_args.append("--no-config")
+
+                        # variant config files given via the config (e.g.
+                        # `render(..., variant_config_files=[...])`) come
+                        # first, so that the explicit `variants` win.
+                        for variant_config_file in self.config.variant_config_files or []:
+                            run_args.extend(["-m", os.path.abspath(variant_config_file)])
 
                         if variants:
                             run_args.extend(["-m", variants_path])
@@ -403,8 +452,18 @@ def render(
         if not hasattr(m.config, "variants") or not m.config.variant:
             m.config.ignore_system_variants = True
 
-            if os.path.isfile(os.path.join(m.path, "variants.yaml")):
-                m.config.variant_config_files = [os.path.join(m.path, "variants.yaml")]
+            recipe_variants_file = os.path.join(m.path, "variants.yaml")
+            if os.path.isfile(recipe_variants_file):
+                # keep variant config files passed by the caller. They go
+                # after the recipe's own variants.yaml so they override it,
+                # matching rattler-build, where `-m` files take precedence
+                # over the auto-discovered variants.yaml.
+                variant_config_files = [
+                    f
+                    for f in (m.config.variant_config_files or [])
+                    if os.path.abspath(f) != os.path.abspath(recipe_variants_file)
+                ]
+                m.config.variant_config_files = [recipe_variants_file] + variant_config_files
 
             used_variant = m.get_used_variant()
 
@@ -441,6 +500,14 @@ def render(
                         ):
                             package_variants.remove(pkg_variant)
                             break
+
+            if not package_variants:
+                raise ValueError(
+                    f"Could not match the variant rattler-build rendered for {m.name()!r} "
+                    f"({used_variant}) against any of the variants computed for it "
+                    f"({m.config.variants}). Please report this at "
+                    "https://github.com/conda-forge/rattler-build-conda-compat/issues"
+                )
 
             m.config.variant = package_variants[0]
 

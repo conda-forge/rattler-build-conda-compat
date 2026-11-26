@@ -4,8 +4,14 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import pytest
+
 from rattler_build_conda_compat.loader import parse_recipe_config_file
-from rattler_build_conda_compat.render import MetaData, render
+from rattler_build_conda_compat.render import (
+    MetaData,
+    _rattler_build_supports_no_config,
+    render,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -318,3 +324,147 @@ def test_bool_roundtrip(feedstock_dir_with_recipe: Path, py_abi3_recipe: Path) -
     assert meta_noabi3.meta["build_configuration"]["variant"]["is_abi3"] is False
     assert "python-abi3" in meta_abi3.meta["recipe"]["requirements"]["host"]
     assert "python-abi3" not in meta_noabi3.meta["recipe"]["requirements"]["host"]
+
+
+def test_variant_config_files_are_passed_to_rattler_build(
+    feedstock_dir_with_recipe: Path,
+) -> None:
+    """Regression test for
+    https://github.com/conda-forge/rattler-build-conda-compat/issues/112.
+
+    Variant config files given to `render()` (as for ``conda_build.api.render``)
+    must reach rattler-build, or recipes using their keys fail to render.
+    """
+    recipe_dir = feedstock_dir_with_recipe / "recipe"
+    (recipe_dir / "recipe.yaml").write_text(
+        """\
+package:
+  name: cdt-repro
+  version: "1.0"
+build:
+  number: ${{ cdt_build_number | int }}
+  string: ${{ distro }}_${{ cdt_build_number }}
+  noarch: generic
+  script: echo hi
+""",
+        encoding="utf8",
+    )
+    config_file = feedstock_dir_with_recipe / "conda_build_config.yaml"
+    config_file.write_text(
+        'cdt_build_number:\n  - "111"\ndistro:\n  - alma9\n  - centos7\n', encoding="utf8"
+    )
+
+    rendered = render(
+        str(recipe_dir),
+        variant_config_files=[str(config_file)],
+        platform="linux",
+        arch="64",
+    )
+
+    assert {meta.build_id() for meta, _, _ in rendered} == {"alma9_111", "centos7_111"}
+    assert {meta.build_number() for meta, _, _ in rendered} == {111}
+
+
+def test_staging_recipe_renders_without_symlinks(
+    feedstock_dir_with_recipe: Path, staging_use_keys_variants_file: Path, monkeypatch
+) -> None:
+    """Regression test for
+    https://github.com/conda-forge/rattler-build-conda-compat/issues/120.
+
+    Creating symlinks fails on Windows without developer mode; the recipe
+    files must then be copied instead.
+    """
+
+    def no_symlinks(*_args: object, **_kwargs: object) -> None:
+        msg = "symbolic link privilege not held"
+        raise OSError(msg)
+
+    monkeypatch.setattr(os, "symlink", no_symlinks)
+
+    recipe_dir = feedstock_dir_with_recipe / "recipe"
+    (recipe_dir / "recipe.yaml").write_text(
+        staging_use_keys_variants_file.read_text(), encoding="utf8"
+    )
+    (recipe_dir / "variants.yaml").write_text("hardening:\n  - none\n  - debug\n", encoding="utf8")
+    (recipe_dir / "patches").mkdir()
+    (recipe_dir / "patches" / "fix.patch").write_text("", encoding="utf8")
+
+    rendered = render(
+        str(recipe_dir / "recipe.yaml"),
+        variants={"c_compiler": ["gcc"], "c_compiler_version": ["14"]},
+        platform="linux",
+        arch="64",
+    )
+
+    repro_metas = [meta for meta, _, _ in rendered if meta.name() == "repro"]
+    assert {meta.config.variant["hardening"] for meta in repro_metas} == {"none", "debug"}
+
+
+@pytest.mark.skipif(
+    not _rattler_build_supports_no_config(),
+    reason="rattler-build does not support --no-config",
+)
+def test_user_pixi_config_is_ignored(
+    feedstock_dir_with_recipe: Path, tmp_path: Path, monkeypatch
+) -> None:
+    """Regression test for
+    https://github.com/conda-forge/rattler-build-conda-compat/issues/135.
+
+    A user's pixi config with ``default-channels`` must not leak into the
+    render (it used to clash with ``channel_sources``).
+    """
+    pixi_home = tmp_path / "pixi-home"
+    pixi_home.mkdir()
+    (pixi_home / "config.toml").write_text(
+        'default-channels = ["https://prefix.dev/meso-forge", "conda-forge"]\n',
+        encoding="utf8",
+    )
+    monkeypatch.setenv("PIXI_HOME", str(pixi_home))
+
+    recipe_dir = feedstock_dir_with_recipe / "recipe"
+    (recipe_dir / "recipe.yaml").write_text(
+        'package:\n  name: repro\n  version: "0.1.0"\nbuild:\n  script: echo hi\n',
+        encoding="utf8",
+    )
+
+    rendered = render(
+        str(recipe_dir),
+        variants={
+            "channel_sources": ["conda-forge"],
+            "channel_targets": ["conda-forge main"],
+            "target_platform": ["linux-64"],
+        },
+        platform="linux",
+        arch="64",
+    )
+
+    assert [meta.name() for meta, _, _ in rendered] == ["repro"]
+
+
+def test_variant_config_files_override_recipe_variants_file(
+    feedstock_dir_with_recipe: Path,
+) -> None:
+    """Variant config files passed to `render()` narrow the recipe's own
+    variants.yaml, as `-m` files do in rattler-build.
+    """
+    recipe_dir = feedstock_dir_with_recipe / "recipe"
+    (recipe_dir / "recipe.yaml").write_text(
+        'package:\n  name: repro\n  version: "1.0"\n'
+        "build:\n  string: ${{ flavor }}_0\n  script: echo hi\n",
+        encoding="utf8",
+    )
+    (recipe_dir / "variants.yaml").write_text("flavor:\n  - a\n  - b\n", encoding="utf8")
+    config_file = feedstock_dir_with_recipe / "ci.yaml"
+    config_file.write_text("flavor:\n  - b\n", encoding="utf8")
+
+    rendered = render(
+        str(recipe_dir),
+        variant_config_files=[str(config_file)],
+        platform="linux",
+        arch="64",
+    )
+
+    assert [meta.build_id() for meta, _, _ in rendered] == ["b_0"]
+    for meta, _, _ in rendered:
+        assert meta.config.variant["flavor"] == "b"
+        assert {v["flavor"] for v in meta.config.input_variants} == {"b"}
