@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+#
+# Minimal reproducer for https://github.com/prefix-dev/rattler-build/issues/2968,
+# modelled on the msvcstl feedstock: a staging output builds every `hardening`
+# flavour at once, and the outputs inheriting from it select the flavour with
+# `variant.use_keys`. `hardening` is defined only in the recipe's variants.yaml,
+# not in the variants conda-smithy passes in.
+
+context:
+  version: "0.1.0"
+
+recipe:
+  name: repro-staging
+  version: ${{ version }}
+
+outputs:
+  - staging:
+      name: repro-build
+    build:
+      script: echo hi
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+
+  - package:
+      name: repro-headers
+    inherit: repro-build
+    build:
+      noarch: generic
+      script: echo hi
+
+  - package:
+      name: repro
+    inherit: repro-build
+    build:
+      string: ${{ "debug_" if hardening == "debug" }}h${{ hash }}_${{ build_number }}
+      variant:
+        use_keys:
+          - hardening
+      script: echo hi
+
+about:
+  homepage: https://example.com
+  summary: reproducer
+  license: BSD-3-Clause

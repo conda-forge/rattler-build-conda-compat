@@ -232,6 +232,34 @@ def test_input_variants_reflects_full_output_matrix(
     assert input_variant_values == {"1.0", "2.0"}
 
 
+def test_input_variants_keeps_keys_from_recipe_variants_file(
+    feedstock_dir_with_recipe: Path, staging_use_keys_variants_file: Path
+) -> None:
+    """Regression test for https://github.com/prefix-dev/rattler-build/issues/2968.
+
+    A key that comes only from the recipe's own variants.yaml (not from the
+    ``variants`` argument) must keep all of its values in ``input_variants``.
+    It used to collapse to the first output's value because the shared matrix
+    was computed after that output's ``config.variant`` had been pinned.
+    """
+    recipe_dir = feedstock_dir_with_recipe / "recipe"
+    (recipe_dir / "recipe.yaml").write_text(
+        staging_use_keys_variants_file.read_text(), encoding="utf8"
+    )
+    (recipe_dir / "variants.yaml").write_text("hardening:\n  - none\n  - debug\n", encoding="utf8")
+
+    variants = {"c_compiler": ["gcc"], "c_compiler_version": ["14"]}
+    rendered = render(
+        str(recipe_dir / "recipe.yaml"), variants=variants, platform="linux", arch="64"
+    )
+
+    repro_metas = [meta for meta, _, _ in rendered if meta.name() == "repro"]
+    assert {meta.config.variant["hardening"] for meta in repro_metas} == {"none", "debug"}
+
+    for meta, _, _ in rendered:
+        assert {v["hardening"] for v in meta.config.input_variants} == {"none", "debug"}
+
+
 def test_bool_roundtrip(feedstock_dir_with_recipe: Path, py_abi3_recipe: Path) -> None:
     recipe_path = feedstock_dir_with_recipe / "recipe" / "recipe.yaml"
     (recipe_path).write_text(py_abi3_recipe.read_text(), encoding="utf8")

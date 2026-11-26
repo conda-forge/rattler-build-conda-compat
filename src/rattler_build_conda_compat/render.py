@@ -399,6 +399,19 @@ def render(
 
             m.config.variants = package_variants[:]
 
+            # Compute the shared matrix before `m.config.variant` is pinned
+            # below: `get_package_combined_spec` feeds `config.variant` back in
+            # as a spec, which would collapse every key that comes only from
+            # the recipe's variants.yaml (not from `variants`) to this output's
+            # single value.
+            if shared_input_variants is None:
+                if len(metadata_tuples) == 1:
+                    shared_input_variants = m.config.variants
+                else:
+                    shared_input_variants = rattler_get_package_variants(
+                        m, variants=variants, used_vars=all_used_vars
+                    )
+
             # we need to discard variants that we don't use
             for pkg_variant in package_variants[:]:
                 for (
@@ -415,14 +428,6 @@ def render(
                             break
 
             m.config.variant = package_variants[0]
-
-            if shared_input_variants is None:
-                if len(metadata_tuples) == 1:
-                    shared_input_variants = m.config.variants
-                else:
-                    shared_input_variants = rattler_get_package_variants(
-                        m, variants=variants, used_vars=all_used_vars
-                    )
 
             # input_variants is always the full set across every output in
             # this render.  'variants' is the one that gets used mostly, and
