@@ -11,8 +11,10 @@ from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScala
 from rattler_build_conda_compat.jinja.filters import (
     _bool,
     _datetimeformat,
+    _endingwith,
     _now,
     _split,
+    _startingwith,
     _version_to_build_string,
 )
 from rattler_build_conda_compat.jinja.objects import (
@@ -97,6 +99,14 @@ def jinja_env(variant_config: Mapping[str, str] | None = None) -> SandboxedEnvir
             "split": _split,
             "bool": _bool,
             "datetimeformat": _datetimeformat,
+        }
+    )
+
+    # inject rattler-build recipe tests that plain Jinja2 does not provide
+    env.tests.update(
+        {
+            "startingwith": _startingwith,
+            "endingwith": _endingwith,
         }
     )
     return env

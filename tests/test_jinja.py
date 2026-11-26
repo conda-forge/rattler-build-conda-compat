@@ -218,3 +218,33 @@ def test_load_recipe_context() -> None:
         "big_folded_string_minus": "A big string on a lot of lines",
         "big_folded_string_plus": "A big string on a lot of lines\n\n",
     }
+
+
+def test_startingwith_endingwith_in_context() -> None:
+    """`startingwith` / `endingwith` are rattler-build tests, not Jinja2 builtins.
+
+    Regression test for prefix-dev/rattler-build#2961.
+    """
+    recipe_yaml = load_yaml(
+        textwrap.dedent(
+            """
+            context:
+              bz_os: ${{ "linux" if build_platform is startingwith("linux") else "darwin" }}
+              bz_arch: ${{ "x86_64" if build_platform == "linux-64" else "arm64" }}
+              is_64: ${{ target_platform is endingwith("64") }}
+              unknown: ${{ "yes" if some_variant is startingwith("1") else "no" }}
+            """
+        )
+    )
+
+    context = load_recipe_context(dict(recipe_yaml["context"]), jinja_env())
+    assert context["bz_os"] == "linux"
+    assert context["bz_arch"] == "x86_64"
+    assert context["is_64"] is True
+    # undefined variant variables keep the template instead of rendering "no"
+    assert context["unknown"] == '${{ "yes" if some_variant is startingwith("1") else "no" }}'
+
+    osx_env = jinja_env({"target_platform": "osx-arm64", "build_platform": "osx-arm64"})
+    context = load_recipe_context(dict(recipe_yaml["context"]), osx_env)
+    assert context["bz_os"] == "darwin"
+    assert context["bz_arch"] == "arm64"
