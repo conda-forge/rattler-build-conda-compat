@@ -98,6 +98,11 @@ def staging_use_keys_variants_file() -> Path:
 
 
 @pytest.fixture
+def bool_variant_from_variants_file() -> Path:
+    return Path("tests/data/bool_variant_from_variants_file.yaml")
+
+
+@pytest.fixture
 def dotted_output_name() -> Path:
     return Path("tests/data/dotted_output_name.yaml")
 

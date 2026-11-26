@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/prefix-dev/recipe-format/main/schema.json
+#
+# Minimal reproducer for https://github.com/conda-forge/rattler-build-conda-compat/issues/137,
+# modelled on clangdev-feedstock: `with_cfg` is a boolean defined in the
+# recipe's variants.yaml and used by one output.
+
+context:
+  version: "0.1.0"
+
+recipe:
+  name: repro-bool
+  version: ${{ version }}
+
+outputs:
+  - package:
+      name: repro-lib
+    build:
+      script: echo hi
+
+  - package:
+      name: repro-tool
+    build:
+      string: ${{ "cfg_" if with_cfg else "" }}h${{ hash }}_${{ build_number }}
+      script: echo hi
+    requirements:
+      host:
+        - if: with_cfg
+          then: zlib
+
+about:
+  homepage: https://example.com
+  summary: reproducer
+  license: BSD-3-Clause

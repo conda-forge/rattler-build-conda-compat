@@ -260,6 +260,34 @@ def test_input_variants_keeps_keys_from_recipe_variants_file(
         assert {v["hardening"] for v in meta.config.input_variants} == {"none", "debug"}
 
 
+def test_bool_variant_from_recipe_variants_file(
+    feedstock_dir_with_recipe: Path, bool_variant_from_variants_file: Path
+) -> None:
+    """Regression test for
+    https://github.com/conda-forge/rattler-build-conda-compat/issues/137.
+
+    A boolean from the recipe's variants.yaml is reported by rattler-build as
+    a bool and spelled ``"true"`` / ``"false"`` by `get_used_variant`, while
+    the candidate variants hold Python bools. Comparing them with plain
+    `str()` (``"False"`` vs ``"false"``) dropped every candidate and
+    `render()` failed with ``IndexError``.
+    """
+    recipe_dir = feedstock_dir_with_recipe / "recipe"
+    (recipe_dir / "recipe.yaml").write_text(
+        bool_variant_from_variants_file.read_text(), encoding="utf8"
+    )
+    (recipe_dir / "variants.yaml").write_text("with_cfg:\n  - true\n  - false\n", encoding="utf8")
+
+    rendered = render(
+        str(recipe_dir / "recipe.yaml"), variants={"python": ["3.12"]}, platform="linux", arch="64"
+    )
+
+    tool_metas = [meta for meta, _, _ in rendered if meta.name() == "repro-tool"]
+    assert {meta.config.variant["with_cfg"] for meta in tool_metas} == {True, False}
+    for meta in tool_metas:
+        assert meta.get_used_variant()["with_cfg"] == str(meta.config.variant["with_cfg"]).lower()
+
+
 def test_bool_roundtrip(feedstock_dir_with_recipe: Path, py_abi3_recipe: Path) -> None:
     recipe_path = feedstock_dir_with_recipe / "recipe" / "recipe.yaml"
     (recipe_path).write_text(py_abi3_recipe.read_text(), encoding="utf8")
